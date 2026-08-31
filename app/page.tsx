@@ -82,7 +82,7 @@ export default async function DashboardPage({
                 icon={Flame}
                 label="Highest single-game score"
                 value={`${fmtPoints(topScore.points)} pts`}
-                detail={`${topScore.team_name ?? topScore.manager_name} · ${topScore.season} Wk ${topScore.week}`}
+                detail={`${topScore.team_name ?? topScore.manager_name} · ${topScore.season} Wk ${topScore.weekLabel}`}
               />
             )}
             {topBlowout && (
@@ -90,7 +90,7 @@ export default async function DashboardPage({
                 icon={Zap}
                 label="Biggest blowout"
                 value={`+${fmtPoints(Math.abs(topBlowout.margin ?? 0))} pts`}
-                detail={`${topBlowout.team_name ?? topBlowout.manager_name} · ${topBlowout.season} Wk ${topBlowout.week}`}
+                detail={`${topBlowout.team_name ?? topBlowout.manager_name} · ${topBlowout.season} Wk ${topBlowout.weekLabel}`}
               />
             )}
             {topPerformance && (

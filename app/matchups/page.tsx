@@ -28,13 +28,20 @@ export default async function MatchupsPage({
   const selectedSeason = seasonParam && seasons.includes(seasonParam) ? seasonParam : overview.currentSeason ?? seasons.at(-1)!;
   const matchups = await getSeasonMatchups(selectedSeason);
 
-  const byWeek = new Map<number, typeof matchups>();
+  // Grouped by weekLabel (not raw week number) so a merged multi-week round
+  // (e.g. "17-18") doesn't get lumped in with unrelated single-week games
+  // that happen to share the same final week number.
+  const byWeekLabel = new Map<string, typeof matchups>();
   for (const m of matchups) {
-    const list = byWeek.get(m.week) ?? [];
+    const list = byWeekLabel.get(m.weekLabel) ?? [];
     list.push(m);
-    byWeek.set(m.week, list);
+    byWeekLabel.set(m.weekLabel, list);
   }
-  const weeks = Array.from(byWeek.keys()).sort((a, b) => a - b);
+  const weekLabels = Array.from(byWeekLabel.keys()).sort((a, b) => {
+    const aLast = Number(a.split("-").at(-1));
+    const bLast = Number(b.split("-").at(-1));
+    return aLast !== bLast ? aLast - bLast : a.localeCompare(b);
+  });
 
   const resolvedA = managerA ?? managers[0]?.id;
   const resolvedB = managerB ?? managers[1]?.id;
@@ -51,16 +58,16 @@ export default async function MatchupsPage({
         actions={<SeasonSelect seasons={seasons} current={selectedSeason} />}
       />
 
-      {weeks.length > 0 ? (
+      {weekLabels.length > 0 ? (
         <div className="flex flex-col gap-6">
-          {weeks.map((week) => (
-            <div key={week} className="flex flex-col gap-2">
+          {weekLabels.map((label) => (
+            <div key={label} className="flex flex-col gap-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Week {week}
-                {byWeek.get(week)?.[0]?.is_playoff ? " · Playoffs" : ""}
+                Week {label}
+                {byWeekLabel.get(label)?.[0]?.is_playoff ? " · Playoffs" : ""}
               </h3>
               <div className="flex flex-col gap-2">
-                {byWeek.get(week)!.map((g) => (
+                {byWeekLabel.get(label)!.map((g) => (
                   <MatchupRow key={`${g.league_id}-${g.week}-${g.matchup_id}`} game={g} />
                 ))}
               </div>
@@ -105,7 +112,7 @@ export default async function MatchupsPage({
                   className="flex items-center justify-between rounded-lg bg-background/40 px-3 py-2 text-sm"
                 >
                   <span className="text-muted-foreground">
-                    {g.season} · Wk {g.week}
+                    {g.season} · Wk {g.weekLabel}
                   </span>
                   <span className="font-mono tabular-nums">
                     {fmtPoints(g.a_points)} – {fmtPoints(g.b_points)}

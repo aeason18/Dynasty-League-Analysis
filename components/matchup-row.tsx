@@ -9,7 +9,7 @@ export function MatchupRow({ game }: { game: Game }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-background/40 px-4 py-3">
       <div className="flex w-24 shrink-0 flex-col text-xs text-muted-foreground">
-        <span>Week {game.week}</span>
+        <span>Week {game.weekLabel}</span>
         {game.is_playoff && <span className="text-accent">Playoffs</span>}
       </div>
       <div className="flex flex-1 items-center justify-between gap-4">

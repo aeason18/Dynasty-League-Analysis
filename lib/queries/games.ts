@@ -5,6 +5,8 @@ export interface Game {
   league_id: string;
   season: string;
   week: number;
+  /** "17" normally, or "17-18" when this game is a merged multi-week round (see mergeMultiWeekPlayoffRounds). */
+  weekLabel: string;
   matchup_id: number | null;
   is_playoff: boolean;
   playoff_round: number | null;
@@ -21,6 +23,89 @@ export interface Game {
   opp_points: number | null;
   result: "W" | "L" | "T" | null;
   margin: number | null;
+}
+
+interface MatchGroup {
+  key: string;
+  league_id: string;
+  week: number;
+  matchup_id: number;
+  rows: Matchup[];
+}
+
+function pairKey(rows: Matchup[]): string {
+  return rows
+    .map((r) => r.roster_id)
+    .sort((a, b) => a - b)
+    .join(",");
+}
+
+interface MergedGroup {
+  rows: Matchup[];
+  firstWeek: number;
+  lastWeek: number;
+}
+
+/**
+ * Some seasons in this league's history combined a playoff round's scoring
+ * across two consecutive weeks instead of deciding it in a single week (its
+ * 2023 championship and 3rd-place games spanned weeks 17-18; every other
+ * round in every other season is single-week). Sleeper has no explicit flag
+ * for this — the signal is that the exact same two rosters face each other
+ * again in the very next playoff week. Detect that and fold the pair of
+ * weeks into one combined-score round, so it's counted as one game (one
+ * win/loss, one combined score) rather than two.
+ */
+function mergeMultiWeekPlayoffRounds(rawGroups: MatchGroup[]): Map<string, MergedGroup> {
+  const byLeagueAndPair = new Map<string, MatchGroup[]>();
+  for (const g of rawGroups) {
+    if (g.rows.length !== 2 || !g.rows[0].is_playoff) continue;
+    const k = `${g.league_id}:${pairKey(g.rows)}`;
+    const list = byLeagueAndPair.get(k) ?? [];
+    list.push(g);
+    byLeagueAndPair.set(k, list);
+  }
+
+  const mergedByKey = new Map<string, MergedGroup>();
+  const foldedKeys = new Set<string>();
+
+  for (const list of byLeagueAndPair.values()) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => a.week - b.week);
+
+    let runStart = 0;
+    for (let i = 1; i <= list.length; i++) {
+      const brokeRun = i === list.length || list[i].week !== list[i - 1].week + 1;
+      if (!brokeRun) continue;
+
+      const run = list.slice(runStart, i);
+      if (run.length > 1) {
+        const survivor = run[run.length - 1];
+        const totalsByRoster = new Map<number, number>();
+        for (const g of run) {
+          for (const row of g.rows) {
+            totalsByRoster.set(row.roster_id, (totalsByRoster.get(row.roster_id) ?? 0) + Number(row.points));
+          }
+        }
+        mergedByKey.set(survivor.key, {
+          rows: survivor.rows.map((row) => ({ ...row, points: totalsByRoster.get(row.roster_id)! })),
+          firstWeek: run[0].week,
+          lastWeek: survivor.week,
+        });
+        for (const g of run) {
+          if (g.key !== survivor.key) foldedKeys.add(g.key);
+        }
+      }
+      runStart = i;
+    }
+  }
+
+  const result = new Map<string, MergedGroup>();
+  for (const g of rawGroups) {
+    if (foldedKeys.has(g.key)) continue;
+    result.set(g.key, mergedByKey.get(g.key) ?? { rows: g.rows, firstWeek: g.week, lastWeek: g.week });
+  }
+  return result;
 }
 
 /**
@@ -51,7 +136,8 @@ export async function getAllGames(): Promise<Game[]> {
     ])
   );
 
-  const groups = new Map<string, Matchup[]>();
+  const rawGroups: MatchGroup[] = [];
+  const groupsByKey = new Map<string, Matchup[]>();
   for (const m of (matchups ?? []) as Matchup[]) {
     // Sleeper sets matchup_id to null once a roster has no real opponent left
     // that week (bracket placement already locked in, bye in a consolation
@@ -63,13 +149,18 @@ export async function getAllGames(): Promise<Game[]> {
     // hardcoded per-season week list to maintain.
     if (m.matchup_id == null) continue;
     const key = `${m.league_id}:${m.week}:${m.matchup_id}`;
-    const list = groups.get(key) ?? [];
+    const list = groupsByKey.get(key) ?? [];
+    if (list.length === 0) rawGroups.push({ key, league_id: m.league_id, week: m.week, matchup_id: m.matchup_id, rows: list });
     list.push(m);
-    groups.set(key, list);
+    groupsByKey.set(key, list);
   }
 
+  const mergedGroups = mergeMultiWeekPlayoffRounds(rawGroups);
+
   const games: Game[] = [];
-  for (const list of groups.values()) {
+  for (const { rows: list, firstWeek, lastWeek } of mergedGroups.values()) {
+    const weekLabel = firstWeek === lastWeek ? String(lastWeek) : `${firstWeek}-${lastWeek}`;
+
     for (const m of list) {
       const opp = list.find((o) => o.roster_id !== m.roster_id) ?? null;
       const team = teamByKey.get(`${m.league_id}:${m.roster_id}`);
@@ -85,7 +176,8 @@ export async function getAllGames(): Promise<Game[]> {
       games.push({
         league_id: m.league_id,
         season: seasonByLeague.get(m.league_id) ?? "",
-        week: m.week,
+        week: lastWeek,
+        weekLabel,
         matchup_id: m.matchup_id,
         is_playoff: m.is_playoff,
         playoff_round: m.playoff_round,

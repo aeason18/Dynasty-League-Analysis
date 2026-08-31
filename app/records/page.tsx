@@ -131,8 +131,8 @@ function GameRecordRow({
           name={game.team_name ?? game.manager_name ?? "Unknown"}
           subtitle={
             showOpponent
-              ? `${game.season} Wk ${game.week} vs ${game.opp_team_name ?? game.opp_manager_name ?? "—"}`
-              : `${game.season} Wk ${game.week}`
+              ? `${game.season} Wk ${game.weekLabel} vs ${game.opp_team_name ?? game.opp_manager_name ?? "—"}`
+              : `${game.season} Wk ${game.weekLabel}`
           }
           avatar={game.avatar}
           size="sm"

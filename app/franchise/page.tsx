@@ -207,7 +207,7 @@ export default async function FranchisePage({
                 icon={Flame}
                 label="Best single-game score"
                 value={`${fmtPoints(bestGame.points)} pts`}
-                detail={`${bestGame.season} Wk ${bestGame.week} vs ${bestGame.opp_manager_name ?? "—"}`}
+                detail={`${bestGame.season} Wk ${bestGame.weekLabel} vs ${bestGame.opp_manager_name ?? "—"}`}
               />
             )}
             {worstGame && (
@@ -215,7 +215,7 @@ export default async function FranchisePage({
                 icon={Snowflake}
                 label="Worst single-game score"
                 value={`${fmtPoints(worstGame.points)} pts`}
-                detail={`${worstGame.season} Wk ${worstGame.week} vs ${worstGame.opp_manager_name ?? "—"}`}
+                detail={`${worstGame.season} Wk ${worstGame.weekLabel} vs ${worstGame.opp_manager_name ?? "—"}`}
               />
             )}
             {biggestWin && (
@@ -223,7 +223,7 @@ export default async function FranchisePage({
                 icon={Trophy}
                 label="Biggest margin of victory"
                 value={`+${fmtPoints(biggestWin.margin ?? 0)} pts`}
-                detail={`${biggestWin.season} Wk ${biggestWin.week} vs ${biggestWin.opp_manager_name ?? "—"}`}
+                detail={`${biggestWin.season} Wk ${biggestWin.weekLabel} vs ${biggestWin.opp_manager_name ?? "—"}`}
               />
             )}
             {decided.length === 0 && <EmptyState title="No games played yet" />}

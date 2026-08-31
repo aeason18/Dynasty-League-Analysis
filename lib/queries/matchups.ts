@@ -21,7 +21,7 @@ export interface HeadToHeadSummary {
   a_wins: number;
   b_wins: number;
   ties: number;
-  games: { season: string; week: number; a_points: number; b_points: number }[];
+  games: { season: string; week: number; weekLabel: string; a_points: number; b_points: number }[];
 }
 
 export async function getHeadToHead(managerA: string, managerB: string): Promise<HeadToHeadSummary | null> {
@@ -36,7 +36,7 @@ export async function getHeadToHead(managerA: string, managerB: string): Promise
     if (g.result === "W") aWins++;
     else if (g.result === "L") bWins++;
     else ties++;
-    return { season: g.season, week: g.week, a_points: g.points, b_points: g.opp_points ?? 0 };
+    return { season: g.season, week: g.week, weekLabel: g.weekLabel, a_points: g.points, b_points: g.opp_points ?? 0 };
   });
 
   return { manager_a: managerA, manager_b: managerB, a_wins: aWins, b_wins: bWins, ties, games: gameList };
