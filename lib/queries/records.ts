@@ -14,8 +14,11 @@ function dedupeMatchups(games: Game[]): Game[] {
     const key = `${g.league_id}:${g.week}:${g.matchup_id}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    // Prefer a stable orientation so "Team A def. Team B" reads consistently.
-    if (g.opp_roster_id != null && g.roster_id > g.opp_roster_id) {
+    // Orient so the winner is always the primary team (reads as "Team A
+    // def. Team B by N"). Falls back to a stable roster_id ordering for
+    // ties, where there's no winner to prefer.
+    const shouldFlip = g.result === "L" || (g.result === "T" && g.opp_roster_id != null && g.roster_id > g.opp_roster_id);
+    if (g.opp_roster_id != null && shouldFlip) {
       out.push({
         ...g,
         roster_id: g.opp_roster_id,
@@ -66,8 +69,13 @@ export async function getLeagueRecords() {
   const uniqueMatchups = dedupeMatchups(games);
   const decided = games.filter((g) => g.opp_points != null);
 
-  const highestScores = [...games].sort((a, b) => b.points - a.points).slice(0, 10);
-  const lowestScores = [...games].sort((a, b) => a.points - b.points).slice(0, 10);
+  // Single-week scores only — a merged multi-week round's combined total
+  // isn't comparable to one week's output, so it's excluded from these two
+  // lists specifically (it still counts everywhere a "game" result matters:
+  // win/loss, streaks, head-to-head, blowouts, combined-score shootouts).
+  const singleWeekGames = games.filter((g) => !g.weekLabel.includes("-"));
+  const highestScores = [...singleWeekGames].sort((a, b) => b.points - a.points).slice(0, 10);
+  const lowestScores = [...singleWeekGames].sort((a, b) => a.points - b.points).slice(0, 10);
 
   const biggestBlowouts = [...uniqueMatchups]
     .filter((g) => g.margin != null)
