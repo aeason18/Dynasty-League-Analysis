@@ -12,6 +12,7 @@ import { StatCard } from "@/components/stat-card";
 import { TeamBadge } from "@/components/team-badge";
 import { EmptyState } from "@/components/empty-state";
 import { ManagerSelect } from "@/components/manager-select";
+import { FranchiseBestPlayersTable } from "@/components/franchise-best-players-table";
 import { WinPctChart } from "@/components/charts/win-pct-chart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -158,41 +159,7 @@ export default async function FranchisePage({
           Total fantasy points scored while rostered on this franchise.
         </p>
         {bestPlayers.length > 0 ? (
-          <div className="overflow-x-auto rounded-2xl border border-border/60 bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-10">#</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead className="text-right">Total Points</TableHead>
-                  <TableHead className="text-right">Games</TableHead>
-                  <TableHead className="text-right">PPG</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bestPlayers.map((p, i) => (
-                  <TableRow key={p.player_id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
-                    <TableCell className="font-medium">
-                      {p.player_name}
-                      {p.player_position && (
-                        <span className="ml-2 text-xs text-muted-foreground">{p.player_position}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm tabular-nums">
-                      {fmtPoints(Number(p.total_points))}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
-                      {p.games_played}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
-                      {fmtPoints(Number(p.ppg))}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <FranchiseBestPlayersTable players={bestPlayers} />
         ) : (
           <EmptyState title="No player scoring data yet" />
         )}
