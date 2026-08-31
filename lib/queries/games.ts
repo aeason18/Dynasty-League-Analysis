@@ -53,6 +53,15 @@ export async function getAllGames(): Promise<Game[]> {
 
   const groups = new Map<string, Matchup[]>();
   for (const m of (matchups ?? []) as Matchup[]) {
+    // Sleeper sets matchup_id to null once a roster has no real opponent left
+    // that week (bracket placement already locked in, bye in a consolation
+    // round, or — as in this league from 2024 onward — a week the league
+    // stopped using for real games at all, e.g. week 18). These rows are a
+    // score with no head-to-head opponent, so they aren't a counted game.
+    // This is what makes rule changes self-updating: whatever weeks Sleeper
+    // actually paired that season are exactly the weeks that count, with no
+    // hardcoded per-season week list to maintain.
+    if (m.matchup_id == null) continue;
     const key = `${m.league_id}:${m.week}:${m.matchup_id}`;
     const list = groups.get(key) ?? [];
     list.push(m);
