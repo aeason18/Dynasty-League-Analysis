@@ -60,9 +60,15 @@ export default async function FranchisePage({
     losses: s.losses,
   }));
 
-  const bestGame = decided.length ? [...decided].sort((a, b) => b.points - a.points)[0] : null;
-  const worstGame = decided.length ? [...decided].sort((a, b) => a.points - b.points)[0] : null;
-  const biggestWin = decided.filter((g) => g.result === "W" && g.margin != null).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0))[0];
+  // Excludes merged multi-week playoff rounds (weekLabel like "17-18") —
+  // their combined two-week total isn't a fair single-game record, same
+  // rule as the league Records page.
+  const singleWeekDecided = decided.filter((g) => !g.weekLabel.includes("-"));
+  const bestGame = singleWeekDecided.length ? [...singleWeekDecided].sort((a, b) => b.points - a.points)[0] : null;
+  const worstGame = singleWeekDecided.length ? [...singleWeekDecided].sort((a, b) => a.points - b.points)[0] : null;
+  const biggestWin = singleWeekDecided
+    .filter((g) => g.result === "W" && g.margin != null)
+    .sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0))[0];
 
   return (
     <div className="flex flex-col gap-8">
@@ -193,7 +199,7 @@ export default async function FranchisePage({
                 detail={`${biggestWin.season} Wk ${biggestWin.weekLabel} vs ${biggestWin.opp_manager_name ?? "—"}`}
               />
             )}
-            {decided.length === 0 && <EmptyState title="No games played yet" />}
+            {singleWeekDecided.length === 0 && <EmptyState title="No games played yet" />}
           </div>
         </section>
 

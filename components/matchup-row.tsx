@@ -31,6 +31,7 @@ export function MatchupRow({ game }: { game: Game }) {
         <TeamBadge
           name={game.opp_team_name ?? game.opp_manager_name ?? "Unknown"}
           subtitle={game.opp_manager_name ?? undefined}
+          avatar={game.opp_avatar}
           className="flex-1"
         />
       </div>

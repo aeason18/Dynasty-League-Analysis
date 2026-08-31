@@ -20,6 +20,7 @@ export interface Game {
   opp_manager_id: string | null;
   opp_manager_name: string | null;
   opp_team_name: string | null;
+  opp_avatar: string | null;
   opp_points: number | null;
   result: "W" | "L" | "T" | null;
   margin: number | null;
@@ -191,6 +192,7 @@ export async function getAllGames(): Promise<Game[]> {
         opp_manager_id: oppTeam?.manager_id ?? null,
         opp_manager_name: oppTeam?.manager?.display_name ?? null,
         opp_team_name: oppTeam?.team_name ?? null,
+        opp_avatar: oppTeam?.manager?.avatar ?? null,
         opp_points: opp ? Number(opp.points) : null,
         result,
         margin: opp ? Number(m.points) - Number(opp.points) : null,
