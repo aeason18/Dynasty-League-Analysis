@@ -69,25 +69,31 @@ export async function getLeagueRecords() {
   const uniqueMatchups = dedupeMatchups(games);
   const decided = games.filter((g) => g.opp_points != null);
 
-  // Single-week scores only — a merged multi-week round's combined total
-  // isn't comparable to one week's output, so it's excluded from these two
-  // lists specifically (it still counts everywhere a "game" result matters:
-  // win/loss, streaks, head-to-head, blowouts, combined-score shootouts).
+  // Single-week games only, for every list on the Records page. A merged
+  // multi-week round's combined total isn't a fair comparison against a
+  // single week's output — it would always dominate the top of every
+  // points-based list (highest/lowest score, biggest blowout, highest
+  // combined shootout) simply because it's summing two weeks, not because
+  // it was actually a bigger single-week performance. It still counts
+  // everywhere a game *result* matters rather than its raw point total:
+  // win/loss, streaks, head-to-head.
   const singleWeekGames = games.filter((g) => !g.weekLabel.includes("-"));
+  const singleWeekMatchups = uniqueMatchups.filter((g) => !g.weekLabel.includes("-"));
+
   const highestScores = [...singleWeekGames].sort((a, b) => b.points - a.points).slice(0, 10);
   const lowestScores = [...singleWeekGames].sort((a, b) => a.points - b.points).slice(0, 10);
 
-  const biggestBlowouts = [...uniqueMatchups]
+  const biggestBlowouts = [...singleWeekMatchups]
     .filter((g) => g.margin != null)
     .sort((a, b) => Math.abs(b.margin!) - Math.abs(a.margin!))
     .slice(0, 10);
 
-  const closestGames = [...uniqueMatchups]
+  const closestGames = [...singleWeekMatchups]
     .filter((g) => g.margin != null && g.result !== "T")
     .sort((a, b) => Math.abs(a.margin!) - Math.abs(b.margin!))
     .slice(0, 10);
 
-  const highestCombined = [...uniqueMatchups]
+  const highestCombined = [...singleWeekMatchups]
     .filter((g) => g.opp_points != null)
     .sort((a, b) => b.points + b.opp_points! - (a.points + a.opp_points!))
     .slice(0, 10);
