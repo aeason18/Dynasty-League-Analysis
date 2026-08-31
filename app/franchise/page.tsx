@@ -1,5 +1,6 @@
 import {
   getManagerByUserId,
+  getAllFranchiseManagers,
   getFranchiseCareerStats,
   getFranchiseSeasons,
   getFranchiseBestPlayers,
@@ -10,6 +11,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { TeamBadge } from "@/components/team-badge";
 import { EmptyState } from "@/components/empty-state";
+import { ManagerSelect } from "@/components/manager-select";
 import { WinPctChart } from "@/components/charts/win-pct-chart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +20,25 @@ import { Trophy, Target, TrendingDown, Crown, Flame, Snowflake } from "lucide-re
 import { notFound } from "next/navigation";
 
 export const revalidate = 300;
-export const metadata = { title: "My Franchise" };
+export const metadata = { title: "Franchise" };
 
-export default async function FranchisePage() {
-  const userId = process.env.SLEEPER_USER_ID;
-  if (!userId) throw new Error("SLEEPER_USER_ID not configured");
+export default async function FranchisePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ manager?: string }>;
+}) {
+  const defaultUserId = process.env.SLEEPER_USER_ID;
+  if (!defaultUserId) throw new Error("SLEEPER_USER_ID not configured");
 
-  const manager = await getManagerByUserId(userId);
+  const [{ manager: managerParam }, allManagers] = await Promise.all([
+    searchParams,
+    getAllFranchiseManagers(),
+  ]);
+
+  const selectedId =
+    managerParam && allManagers.some((m) => m.user_id === managerParam) ? managerParam : defaultUserId;
+
+  const manager = await getManagerByUserId(selectedId);
   if (!manager) notFound();
 
   const [career, seasons, bestPlayers, games, headToHead] = await Promise.all([
@@ -55,6 +69,7 @@ export default async function FranchisePage() {
         eyebrow="Franchise"
         title={seasons.at(-1)?.team_name ?? manager.display_name}
         description={`Managed by ${manager.display_name} · ${seasons.length} seasons in the league`}
+        actions={<ManagerSelect managers={allManagers} current={manager.user_id} />}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

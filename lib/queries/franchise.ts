@@ -25,6 +25,21 @@ export async function getManagerByUserId(userId: string): Promise<Manager | null
   return data as Manager | null;
 }
 
+export async function getAllFranchiseManagers(): Promise<Manager[]> {
+  const db = createReadClient();
+  const { data, error } = await db
+    .from("team_seasons")
+    .select("manager:managers(*)")
+    .not("manager_id", "is", null);
+  if (error) throw error;
+
+  const seen = new Map<string, Manager>();
+  for (const row of (data ?? []) as unknown as { manager: Manager | null }[]) {
+    if (row.manager) seen.set(row.manager.user_id, row.manager);
+  }
+  return Array.from(seen.values()).sort((a, b) => a.display_name.localeCompare(b.display_name));
+}
+
 export async function getFranchiseCareerStats(managerId: string): Promise<ManagerCareerStats | null> {
   const db = createReadClient();
   const { data, error } = await db
