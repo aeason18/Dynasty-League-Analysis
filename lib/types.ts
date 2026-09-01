@@ -98,6 +98,8 @@ export interface Transaction {
   roster_ids: number[];
   adds: Record<string, number> | null;
   drops: Record<string, number> | null;
+  draft_picks: { round: number; season: string; roster_id: number; owner_id: number; previous_owner_id: number }[];
+  waiver_budget: { sender: number; receiver: number; amount: number }[];
   created_at: string | null;
 }
 

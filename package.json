@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test:sleeper": "tsx scripts/test-sleeper.ts",
     "migrate": "tsx scripts/migrate.ts",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx scripts/ingest.ts",
+    "sync:fantasycalc": "tsx scripts/sync-fantasycalc.ts",
+    "resolve:picks": "tsx scripts/resolve-draft-picks.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

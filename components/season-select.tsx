@@ -3,7 +3,17 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function SeasonSelect({ seasons, current }: { seasons: string[]; current: string }) {
+export function SeasonSelect({
+  seasons,
+  current,
+  allLabel,
+}: {
+  seasons: string[];
+  current: string;
+  /** Label for the literal season value "All", if present in `seasons`. */
+  allLabel?: string;
+}) {
+  const formatLabel = (s: string) => (s === "All" && allLabel ? allLabel : `${s} Season`);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -23,7 +33,7 @@ export function SeasonSelect({ seasons, current }: { seasons: string[]; current:
       <SelectContent>
         {seasons.map((s) => (
           <SelectItem key={s} value={s}>
-            {s} Season
+            {formatLabel(s)}
           </SelectItem>
         ))}
       </SelectContent>

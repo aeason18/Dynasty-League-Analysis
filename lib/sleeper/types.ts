@@ -102,6 +102,10 @@ export interface SleeperDraft {
   type: string;
   status: string;
   start_time: number | null;
+  /** sleeper_user_id -> draft slot (1-indexed). The original per-slot
+   * roster ownership signal for pick trading — NOT reverse-standings order
+   * (verified against real data; see scripts/resolve-draft-picks.ts). */
+  draft_order: Record<string, number> | null;
   settings: {
     rounds?: number;
     teams?: number;
