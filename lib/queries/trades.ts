@@ -212,3 +212,18 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
 
   return Array.from(byManager.values()).sort((a, b) => b.netValue - a.netValue);
 }
+
+/**
+ * The trades with the biggest value gap between sides, out of a given trade
+ * list (pure function, not a fetch — pass an already-loaded `Trade[]` so a
+ * page can derive this from data it fetched once and share it with the
+ * active season/manager filters).
+ */
+export function getMostLopsidedTrades(trades: Trade[], limit = 10): Trade[] {
+  return trades
+    .filter((t) => t.sides.length >= 2 && t.sides.some((s) => s.totalValue > 0))
+    .map((t) => ({ trade: t, spread: Math.max(...t.sides.map((s) => s.totalValue)) - Math.min(...t.sides.map((s) => s.totalValue)) }))
+    .sort((a, b) => b.spread - a.spread)
+    .slice(0, limit)
+    .map((x) => x.trade);
+}

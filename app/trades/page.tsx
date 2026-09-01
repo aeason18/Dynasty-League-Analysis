@@ -1,4 +1,4 @@
-import { getTrades, getTradeLeaderboard } from "@/lib/queries/trades";
+import { getTrades, getTradeLeaderboard, getMostLopsidedTrades } from "@/lib/queries/trades";
 import { getLeagues } from "@/lib/queries/leagues";
 import { getAllFranchiseManagers } from "@/lib/queries/franchise";
 import { PageHeader } from "@/components/page-header";
@@ -37,6 +37,8 @@ export default async function TradesPage({
   const filtered = trades
     .filter((t) => selectedSeason === "All" || t.season === selectedSeason)
     .filter((t) => selectedManager === "All" || t.sides.some((s) => s.manager_id === selectedManager));
+
+  const mostLopsided = getMostLopsidedTrades(filtered, 5);
 
   return (
     <div className="flex flex-col gap-8">
@@ -106,6 +108,21 @@ export default async function TradesPage({
             Net value = each side&apos;s share of value received minus an equal split of the trade&apos;s total value, summed
             across every trade. A rough signal of who has come out ahead, not a precise grade.
           </p>
+        </section>
+      )}
+
+      {mostLopsided.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <h2 className="font-heading text-lg font-semibold tracking-tight">Most Lopsided Trades</h2>
+          <p className="-mt-2 text-sm text-muted-foreground">
+            The biggest value gap between sides, by today&apos;s market — not necessarily a bad trade for the side that
+            gave up more value, just the widest spread.
+          </p>
+          <div className="flex flex-col gap-4">
+            {mostLopsided.map((trade) => (
+              <TradeCard key={trade.transaction_id} trade={trade} />
+            ))}
+          </div>
         </section>
       )}
 
