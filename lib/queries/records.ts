@@ -172,6 +172,7 @@ export async function getLeagueRecords() {
   );
 
   const bestPerformances: PlayerPerformance[] = ((matchupPlayers ?? []) as unknown as MatchupPlayerWithPlayer[])
+    .filter((mp) => mp.player?.position !== "DEF")
     .slice(0, 10)
     .map((mp) => {
       const team = teamByKey.get(`${mp.league_id}:${mp.roster_id}`);
