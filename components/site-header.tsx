@@ -53,13 +53,8 @@ export function SiteHeader() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <Trophy className="h-4.5 w-4.5" strokeWidth={2.25} />
           </span>
-          <span className="flex flex-col leading-tight">
-            <span className="font-heading text-sm font-semibold tracking-tight text-foreground">
-              Fantasy League Archive
-            </span>
-            <span className="hidden text-[11px] font-medium text-muted-foreground sm:block">
-              Your league. Your history. Your analytics.
-            </span>
+          <span className="font-heading text-sm font-semibold tracking-tight text-foreground">
+            Fantasy League Archive
           </span>
         </Link>
 
