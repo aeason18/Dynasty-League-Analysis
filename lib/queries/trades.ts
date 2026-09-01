@@ -15,7 +15,13 @@ export interface TradeSide {
   team_name: string | null;
   avatar: string | null;
   received: TradeAsset[];
-  totalValue: number;
+  receivedValue: number;
+  sent: TradeAsset[];
+  sentValue: number;
+  /** receivedValue - sentValue. Self-relative to this side alone — not a
+   * split of the trade's total pool, so it's meaningful on its own even in
+   * a 3+ team trade where sides don't necessarily exchange equal shares. */
+  netValue: number;
 }
 
 export interface Trade {
@@ -100,57 +106,80 @@ export async function getTrades(): Promise<Trade[]> {
     return Math.round(tiers.reduce((sum, t) => sum + t.value, 0) / tiers.length);
   }
 
+  function playerAssets(map: Record<string, number>, rosterId: number): TradeAsset[] {
+    const out: TradeAsset[] = [];
+    for (const [playerId, r] of Object.entries(map)) {
+      if (r !== rosterId) continue;
+      const fc = valueBySleeperId.get(playerId);
+      out.push({ kind: "player", label: playerName.get(playerId) ?? fc?.name ?? playerId, value: fc?.value ?? null });
+    }
+    return out;
+  }
+
+  function pickAssets(
+    draftPicksMoved: Transaction["draft_picks"],
+    rosterId: number,
+    direction: "received" | "sent"
+  ): TradeAsset[] {
+    const out: TradeAsset[] = [];
+    for (const dp of draftPicksMoved) {
+      const matchRoster = direction === "received" ? dp.owner_id : dp.roster_id;
+      if (matchRoster !== rosterId) continue;
+      const resolved = resolvedByKey.get(`${dp.season}:${dp.round}:${dp.roster_id}`);
+      if (resolved) {
+        const fc = valueBySleeperId.get(resolved.resolved_player_id);
+        out.push({
+          kind: "pick",
+          label: `${dp.season} Round ${dp.round} pick`,
+          detail: playerName.get(resolved.resolved_player_id) ?? undefined,
+          value: fc?.value ?? null,
+        });
+      } else {
+        out.push({
+          kind: "pick",
+          label: `${dp.season} Round ${dp.round} pick`,
+          value: pickValue(Number(dp.season), dp.round),
+        });
+      }
+    }
+    return out;
+  }
+
+  function faabAssets(waiverBudget: Transaction["waiver_budget"], rosterId: number, direction: "received" | "sent"): TradeAsset[] {
+    const out: TradeAsset[] = [];
+    for (const wb of waiverBudget) {
+      const matchRoster = direction === "received" ? wb.receiver : wb.sender;
+      if (matchRoster !== rosterId) continue;
+      out.push({ kind: "faab", label: `$${wb.amount} FAAB`, value: null });
+    }
+    return out;
+  }
+
   const trades: Trade[] = [];
 
   for (const tx of (transactions ?? []) as Transaction[]) {
     const season = seasonByLeague.get(tx.league_id) ?? "";
     const rosterIds = tx.roster_ids ?? [];
     const adds = tx.adds ?? {};
+    const drops = tx.drops ?? {};
     const draftPicksMoved = tx.draft_picks ?? [];
     const waiverBudget = tx.waiver_budget ?? [];
 
     const sides: TradeSide[] = rosterIds.map((rosterId) => {
       const team = teamByKey.get(`${tx.league_id}:${rosterId}`);
-      const received: TradeAsset[] = [];
 
-      // Players this roster received.
-      for (const [playerId, receivingRoster] of Object.entries(adds)) {
-        if (receivingRoster !== rosterId) continue;
-        const fc = valueBySleeperId.get(playerId);
-        received.push({
-          kind: "player",
-          label: playerName.get(playerId) ?? fc?.name ?? playerId,
-          value: fc?.value ?? null,
-        });
-      }
-
-      // Picks this roster received.
-      for (const dp of draftPicksMoved) {
-        if (dp.owner_id !== rosterId) continue;
-        const seasonNum = Number(dp.season);
-        const resolved = resolvedByKey.get(`${dp.season}:${dp.round}:${dp.roster_id}`);
-        if (resolved) {
-          const fc = valueBySleeperId.get(resolved.resolved_player_id);
-          received.push({
-            kind: "pick",
-            label: `${dp.season} Round ${dp.round} pick`,
-            detail: playerName.get(resolved.resolved_player_id) ?? undefined,
-            value: fc?.value ?? null,
-          });
-        } else {
-          received.push({
-            kind: "pick",
-            label: `${dp.season} Round ${dp.round} pick`,
-            value: pickValue(seasonNum, dp.round),
-          });
-        }
-      }
-
-      // FAAB received.
-      for (const wb of waiverBudget) {
-        if (wb.receiver !== rosterId) continue;
-        received.push({ kind: "faab", label: `$${wb.amount} FAAB`, value: null });
-      }
+      const received = [
+        ...playerAssets(adds, rosterId),
+        ...pickAssets(draftPicksMoved, rosterId, "received"),
+        ...faabAssets(waiverBudget, rosterId, "received"),
+      ];
+      const sent = [
+        ...playerAssets(drops, rosterId),
+        ...pickAssets(draftPicksMoved, rosterId, "sent"),
+        ...faabAssets(waiverBudget, rosterId, "sent"),
+      ];
+      const receivedValue = received.reduce((sum, a) => sum + (a.value ?? 0), 0);
+      const sentValue = sent.reduce((sum, a) => sum + (a.value ?? 0), 0);
 
       return {
         roster_id: rosterId,
@@ -159,7 +188,10 @@ export async function getTrades(): Promise<Trade[]> {
         team_name: team?.team_name ?? null,
         avatar: team?.manager?.avatar ?? null,
         received,
-        totalValue: received.reduce((sum, a) => sum + (a.value ?? 0), 0),
+        receivedValue,
+        sent,
+        sentValue,
+        netValue: receivedValue - sentValue,
       };
     });
 
@@ -190,8 +222,6 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
 
   for (const trade of trades) {
     if (trade.sides.length < 2) continue;
-    const totalPool = trade.sides.reduce((sum, s) => sum + s.totalValue, 0);
-    const fairShare = totalPool / trade.sides.length;
 
     for (const side of trade.sides) {
       if (!side.manager_id) continue;
@@ -205,7 +235,7 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
           netValue: 0,
         } satisfies TradeLeaderboardRow);
       row.trades++;
-      row.netValue += Math.round(side.totalValue - fairShare);
+      row.netValue += side.netValue;
       byManager.set(side.manager_id, row);
     }
   }
@@ -214,15 +244,21 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
 }
 
 /**
- * The trades with the biggest value gap between sides, out of a given trade
- * list (pure function, not a fetch — pass an already-loaded `Trade[]` so a
- * page can derive this from data it fetched once and share it with the
- * active season/manager filters).
+ * The trades with the biggest net-value gap between sides, out of a given
+ * trade list (pure function, not a fetch — pass an already-loaded
+ * `Trade[]` so a page can derive this from data it fetched once and share
+ * it with the active season/manager filters).
+ *
+ * Ranked by netValue spread (received minus given up, per side), not raw
+ * received-value spread — a side that received less because it also gave
+ * up less isn't "lopsided," it just had a smaller piece of the deal. What
+ * makes a trade lopsided is one side coming out ahead relative to what
+ * they each put in.
  */
 export function getMostLopsidedTrades(trades: Trade[], limit = 10): Trade[] {
   return trades
-    .filter((t) => t.sides.length >= 2 && t.sides.some((s) => s.totalValue > 0))
-    .map((t) => ({ trade: t, spread: Math.max(...t.sides.map((s) => s.totalValue)) - Math.min(...t.sides.map((s) => s.totalValue)) }))
+    .filter((t) => t.sides.length >= 2 && t.sides.some((s) => s.receivedValue > 0 || s.sentValue > 0))
+    .map((t) => ({ trade: t, spread: Math.max(...t.sides.map((s) => s.netValue)) - Math.min(...t.sides.map((s) => s.netValue)) }))
     .sort((a, b) => b.spread - a.spread)
     .slice(0, limit)
     .map((x) => x.trade);

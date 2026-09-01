@@ -105,8 +105,9 @@ export default async function TradesPage({
             </Table>
           </div>
           <p className="text-xs text-muted-foreground">
-            Net value = each side&apos;s share of value received minus an equal split of the trade&apos;s total value, summed
-            across every trade. A rough signal of who has come out ahead, not a precise grade.
+            Net value = value received minus value given up, per trade, summed across every trade a manager has
+            made. Self-relative to each side — not split against the other side(s) of the deal, so a smaller piece
+            of a multi-team trade isn&apos;t penalized just for being smaller.
           </p>
         </section>
       )}
@@ -115,8 +116,8 @@ export default async function TradesPage({
         <section className="flex flex-col gap-4">
           <h2 className="font-heading text-lg font-semibold tracking-tight">Most Lopsided Trades</h2>
           <p className="-mt-2 text-sm text-muted-foreground">
-            The biggest value gap between sides, by today&apos;s market — not necessarily a bad trade for the side that
-            gave up more value, just the widest spread.
+            The biggest net-value gap between sides, by today&apos;s market — where one side ended up clearly ahead of
+            what they put in relative to the other side(s).
           </p>
           <div className="flex flex-col gap-4">
             {mostLopsided.map((trade) => (

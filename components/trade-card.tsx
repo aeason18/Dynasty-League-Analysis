@@ -11,7 +11,7 @@ function formatDate(iso: string | null): string {
 }
 
 export function TradeCard({ trade }: { trade: Trade }) {
-  const maxValue = Math.max(...trade.sides.map((s) => s.totalValue));
+  const maxNet = Math.max(...trade.sides.map((s) => s.netValue));
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-5">
@@ -25,7 +25,7 @@ export function TradeCard({ trade }: { trade: Trade }) {
 
       <div className={cn("grid gap-4", trade.sides.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
         {trade.sides.map((side) => {
-          const isTopValue = side.totalValue === maxValue && trade.sides.length > 1 && maxValue > 0;
+          const isTopValue = side.netValue === maxNet && trade.sides.length > 1 && maxNet > 0;
           return (
             <div key={side.roster_id} className="flex flex-col gap-3 rounded-xl bg-background/40 p-4">
               <div className="flex items-center justify-between gap-2">
@@ -41,7 +41,11 @@ export function TradeCard({ trade }: { trade: Trade }) {
                   </Badge>
                 )}
               </div>
+
               <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Received
+                </span>
                 {side.received.map((asset, i) => (
                   <div key={i} className="flex items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate text-foreground">
@@ -54,9 +58,39 @@ export function TradeCard({ trade }: { trade: Trade }) {
                   </div>
                 ))}
               </div>
+
+              {side.sent.length > 0 && (
+                <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2">
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Gave up
+                  </span>
+                  {side.sent.map((asset, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <span className="min-w-0 truncate">
+                        {asset.label}
+                        {asset.detail && <span> → {asset.detail}</span>}
+                      </span>
+                      <span className="shrink-0 font-mono text-xs tabular-nums">
+                        {asset.value != null ? fmtNumber(asset.value) : "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-center justify-between border-t border-border/50 pt-2 text-xs">
-                <span className="text-muted-foreground">Total value</span>
-                <span className="font-mono font-semibold tabular-nums text-foreground">{fmtNumber(side.totalValue)}</span>
+                <span className="text-muted-foreground">Net value</span>
+                <span
+                  className={cn(
+                    "font-mono font-semibold tabular-nums",
+                    side.netValue > 0 && "text-primary",
+                    side.netValue < 0 && "text-destructive",
+                    side.netValue === 0 && "text-foreground"
+                  )}
+                >
+                  {side.netValue > 0 ? "+" : ""}
+                  {fmtNumber(side.netValue)}
+                </span>
               </div>
             </div>
           );
