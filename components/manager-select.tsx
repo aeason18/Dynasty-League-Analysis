@@ -6,9 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function ManagerSelect({
   managers,
   current,
+  allLabel,
+  placeholder = "Select franchise",
 }: {
   managers: { user_id: string; display_name: string }[];
   current: string;
+  /** When set, an extra option with value "All" is shown with this label. */
+  allLabel?: string;
+  placeholder?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,14 +26,18 @@ export function ManagerSelect({
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  function label(value: string | null) {
+    if (value === "All" && allLabel) return allLabel;
+    return managers.find((m) => m.user_id === value)?.display_name ?? placeholder;
+  }
+
   return (
     <Select value={current} onValueChange={onChange}>
       <SelectTrigger className="w-full bg-card sm:w-[200px]">
-        <SelectValue placeholder="Select franchise">
-          {(value: string | null) => managers.find((m) => m.user_id === value)?.display_name ?? "Select franchise"}
-        </SelectValue>
+        <SelectValue placeholder={placeholder}>{label}</SelectValue>
       </SelectTrigger>
       <SelectContent>
+        {allLabel && <SelectItem value="All">{allLabel}</SelectItem>}
         {managers.map((m) => (
           <SelectItem key={m.user_id} value={m.user_id}>
             {m.display_name}

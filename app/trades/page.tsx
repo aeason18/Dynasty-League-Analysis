@@ -1,7 +1,9 @@
 import { getTrades, getTradeLeaderboard } from "@/lib/queries/trades";
 import { getLeagues } from "@/lib/queries/leagues";
+import { getAllFranchiseManagers } from "@/lib/queries/franchise";
 import { PageHeader } from "@/components/page-header";
 import { SeasonSelect } from "@/components/season-select";
+import { ManagerSelect } from "@/components/manager-select";
 import { TradeCard } from "@/components/trade-card";
 import { TeamBadge } from "@/components/team-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -15,14 +17,26 @@ export const metadata = { title: "Trades" };
 export default async function TradesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ season?: string }>;
+  searchParams: Promise<{ season?: string; manager?: string }>;
 }) {
-  const { season: seasonParam } = await searchParams;
-  const [trades, leaderboard, leagues] = await Promise.all([getTrades(), getTradeLeaderboard(), getLeagues()]);
+  const { season: seasonParam, manager: managerParam } = await searchParams;
+  const [trades, leaderboard, leagues, managers] = await Promise.all([
+    getTrades(),
+    getTradeLeaderboard(),
+    getLeagues(),
+    getAllFranchiseManagers(),
+  ]);
 
   const seasons = ["All", ...leagues.map((l) => l.season)];
   const selectedSeason = seasonParam && seasons.includes(seasonParam) ? seasonParam : "All";
-  const filtered = selectedSeason === "All" ? trades : trades.filter((t) => t.season === selectedSeason);
+
+  const selectedManager =
+    managerParam && managers.some((m) => m.user_id === managerParam) ? managerParam : "All";
+  const selectedManagerName = managers.find((m) => m.user_id === selectedManager)?.display_name;
+
+  const filtered = trades
+    .filter((t) => selectedSeason === "All" || t.season === selectedSeason)
+    .filter((t) => selectedManager === "All" || t.sides.some((s) => s.manager_id === selectedManager));
 
   return (
     <div className="flex flex-col gap-8">
@@ -30,7 +44,17 @@ export default async function TradesPage({
         eyebrow="Trades"
         title="Trade Value"
         description="Every trade in league history, valued with FantasyCalc dynasty market values. A traded pick that has since been used in a draft shows the actual player it became."
-        actions={<SeasonSelect seasons={seasons} current={selectedSeason} allLabel="All Seasons" />}
+        actions={
+          <>
+            <ManagerSelect
+              managers={managers}
+              current={selectedManager}
+              allLabel="All Managers"
+              placeholder="All Managers"
+            />
+            <SeasonSelect seasons={seasons} current={selectedSeason} allLabel="All Seasons" />
+          </>
+        }
       />
 
       <div className="flex items-start gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-3 text-xs text-muted-foreground">
@@ -87,7 +111,8 @@ export default async function TradesPage({
 
       <section className="flex flex-col gap-4">
         <h2 className="font-heading text-lg font-semibold tracking-tight">
-          {selectedSeason === "All" ? "All Trades" : `${selectedSeason} Trades`}
+          {selectedManagerName ? `${selectedManagerName}'s Trades` : "All Trades"}
+          {selectedSeason !== "All" ? ` · ${selectedSeason}` : ""}
         </h2>
         {filtered.length > 0 ? (
           <div className="flex flex-col gap-4">
@@ -99,7 +124,7 @@ export default async function TradesPage({
           <EmptyState
             icon={ArrowRightLeft}
             title="No trades found"
-            description={selectedSeason === "All" ? "No trades in league history yet." : `No trades in ${selectedSeason}.`}
+            description="No trades match the current filters."
           />
         )}
       </section>
