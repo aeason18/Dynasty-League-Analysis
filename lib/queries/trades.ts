@@ -123,7 +123,13 @@ export async function getTrades(): Promise<Trade[]> {
   ): TradeAsset[] {
     const out: TradeAsset[] = [];
     for (const dp of draftPicksMoved) {
-      const matchRoster = direction === "received" ? dp.owner_id : dp.roster_id;
+      // dp.roster_id is the pick's permanent original owner (used below only to
+      // resolve which player it became) -- NOT who is giving it up in this
+      // specific trade. That's previous_owner_id. Using roster_id here caused a
+      // pick returning to its original owner to be counted as both received
+      // and sent by the same manager, since owner_id and roster_id can be the
+      // same roster in that case.
+      const matchRoster = direction === "received" ? dp.owner_id : dp.previous_owner_id;
       if (matchRoster !== rosterId) continue;
       const resolved = resolvedByKey.get(`${dp.season}:${dp.round}:${dp.roster_id}`);
       if (resolved) {
