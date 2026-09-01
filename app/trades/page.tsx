@@ -79,6 +79,7 @@ export default async function TradesPage({
                   <TableHead>Manager</TableHead>
                   <TableHead className="text-right">Trades</TableHead>
                   <TableHead className="text-right">Net Value</TableHead>
+                  <TableHead className="text-right">Avg / Trade</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -99,6 +100,14 @@ export default async function TradesPage({
                       {row.netValue >= 0 ? "+" : ""}
                       {fmtNumber(row.netValue)}
                     </TableCell>
+                    <TableCell
+                      className={`text-right font-mono text-sm tabular-nums ${
+                        row.avgValue >= 0 ? "text-primary" : "text-destructive"
+                      }`}
+                    >
+                      {row.avgValue >= 0 ? "+" : ""}
+                      {fmtNumber(row.avgValue)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -107,7 +116,8 @@ export default async function TradesPage({
           <p className="text-xs text-muted-foreground">
             Net value = value received minus value given up, per trade, summed across every trade a manager has
             made. Self-relative to each side — not split against the other side(s) of the deal, so a smaller piece
-            of a multi-team trade isn&apos;t penalized just for being smaller.
+            of a multi-team trade isn&apos;t penalized just for being smaller. Avg / Trade is that total divided by
+            trade count — useful for comparing managers who trade a lot against ones who make a few big swings.
           </p>
         </section>
       )}

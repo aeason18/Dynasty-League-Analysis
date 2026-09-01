@@ -214,6 +214,7 @@ export interface TradeLeaderboardRow {
   avatar: string | null;
   trades: number;
   netValue: number;
+  avgValue: number;
 }
 
 export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
@@ -233,6 +234,7 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
           avatar: side.avatar,
           trades: 0,
           netValue: 0,
+          avgValue: 0,
         } satisfies TradeLeaderboardRow);
       row.trades++;
       row.netValue += side.netValue;
@@ -240,7 +242,12 @@ export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
     }
   }
 
-  return Array.from(byManager.values()).sort((a, b) => b.netValue - a.netValue);
+  const rows = Array.from(byManager.values());
+  for (const row of rows) {
+    row.avgValue = Math.round(row.netValue / row.trades);
+  }
+
+  return rows.sort((a, b) => b.netValue - a.netValue);
 }
 
 /**
