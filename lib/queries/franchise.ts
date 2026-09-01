@@ -63,7 +63,7 @@ export async function getFranchiseSeasons(managerId: string): Promise<FranchiseS
     .sort((a, b) => a.season.localeCompare(b.season));
 }
 
-export async function getFranchiseBestPlayers(managerId: string, limit = 15): Promise<PlayerTeamPoints[]> {
+export async function getFranchiseBestPlayers(managerId: string, limit = 50): Promise<PlayerTeamPoints[]> {
   const db = createReadClient();
   const { data, error } = await db
     .from("player_team_points")
