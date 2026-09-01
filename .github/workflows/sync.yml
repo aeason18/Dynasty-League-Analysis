@@ -1,0 +1,47 @@
+name: Sync league data
+
+# Runs the same ingest/sync/resolve scripts used locally, on a schedule.
+# Deliberately not run via Vercel Cron: a full ingest re-pulls this
+# league's entire history from Sleeper (hundreds of requests) which
+# comfortably exceeds Vercel's 60s Hobby-plan function limit. GitHub
+# Actions has no such cap and this costs nothing against Vercel usage —
+# it writes straight to Supabase; Vercel only ever serves reads.
+on:
+  schedule:
+    # Wednesday 09:00 UTC — after Tuesday waivers/MNF have settled.
+    - cron: "0 9 * * 3"
+  workflow_dispatch: {} # allows manual "Run workflow" from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Sync Sleeper data
+        run: npm run ingest
+        env:
+          SLEEPER_USER_ID: ${{ secrets.SLEEPER_USER_ID }}
+          SLEEPER_LEAGUE_ID: ${{ secrets.SLEEPER_LEAGUE_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Sync FantasyCalc values
+        run: npm run sync:fantasycalc
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Resolve traded draft picks
+        run: npm run resolve:picks
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

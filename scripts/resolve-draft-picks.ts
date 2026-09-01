@@ -52,14 +52,16 @@ async function main() {
   }[] = [];
 
   for (const league of leagues ?? []) {
-    if (league.status !== "complete") {
+    // Gate on the *draft's* status, not the league's — a season's rookie
+    // draft is typically complete well before that season's league itself
+    // reaches "complete" (e.g. 2026's draft already happened, but the
+    // league won't be "complete" until the season finishes).
+    const drafts = await sleeper.getDrafts(league.league_id);
+    const draft = drafts.find((d) => d.season === league.season);
+    if (!draft || draft.status !== "complete") {
       skippedNotDrafted += (tradedPicks ?? []).filter((tp) => tp.season === league.season).length;
       continue;
     }
-
-    const drafts = await sleeper.getDrafts(league.league_id);
-    const draft = drafts.find((d) => d.season === league.season);
-    if (!draft || draft.status !== "complete") continue;
 
     const order = draft.draft_order;
     const type = draft.type;
