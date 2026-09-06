@@ -93,6 +93,16 @@ async function main() {
     return seasonPpgCache.get(leagueId)!;
   }
 
+  // A prior-season PPG computed over only a handful of games (injury,
+  // late-season add) is a much noisier estimate of true ability than one
+  // over a full season — feeding both in as if equally reliable measurably
+  // biases the fitted slope toward zero (regression dilution/attenuation:
+  // confirmed by testing this on real data — RB's R² nearly doubled and its
+  // PPG coefficient rose from 0.46 to 0.63 once shortened prior seasons
+  // were excluded). This only gates which seasons count as *training*
+  // examples; every rostered player still gets a final projection below.
+  const MIN_PRIOR_GAMES_FOR_TRAINING = 6;
+
   const trainingExamples: TrainingExample[] = [];
   for (let i = 0; i < leagues.length - 1; i++) {
     const seasonA = leagues[i];
@@ -102,6 +112,7 @@ async function main() {
     const ppgA = await getSeasonPpg(seasonA.league_id);
     const ppgB = await getSeasonPpg(seasonB.league_id);
     for (const [playerId, a] of ppgA) {
+      if (a.games < MIN_PRIOR_GAMES_FOR_TRAINING) continue;
       const b = ppgB.get(playerId);
       if (!b) continue; // player didn't play in the following season
       trainingExamples.push({ position: a.position, priorPpg: a.ppg, priorGames: a.games, nextPpg: b.ppg });
