@@ -25,8 +25,13 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
 
   const [teamSplits, gameLog] = await Promise.all([getPlayerTeamSplits(id), getPlayerGameLog(id)]);
 
-  const totalPoints = teamSplits.reduce((sum, t) => sum + Number(t.total_points), 0);
-  const totalGames = gameLog.length;
+  // Bye/injury/inactive weeks (did_play === false) are shown in the log
+  // below for a complete history, but shouldn't count toward games-played
+  // or PPG — same rule as the player_league_totals/player_team_points
+  // views this page's other numbers come from.
+  const playedGames = gameLog.filter((g) => g.did_play !== false);
+  const totalPoints = playedGames.reduce((sum, g) => sum + g.points, 0);
+  const totalGames = playedGames.length;
   const ppg = totalGames ? totalPoints / totalGames : 0;
   const bestGame = gameLog.length ? [...gameLog].sort((a, b) => b.points - a.points)[0] : null;
 
@@ -125,14 +130,20 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               </TableHeader>
               <TableBody>
                 {[...gameLog].reverse().map((g, i) => (
-                  <TableRow key={`${g.season}-${g.week}-${i}`}>
+                  <TableRow key={`${g.season}-${g.week}-${i}`} className={g.did_play === false ? "opacity-50" : undefined}>
                     <TableCell>{g.season}</TableCell>
                     <TableCell className="text-muted-foreground">{g.week}</TableCell>
                     <TableCell className="text-muted-foreground">{g.team_name ?? g.manager_name ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={g.is_starter ? "default" : "outline"} className="text-[10px]">
-                        {g.is_starter ? "Starter" : "Bench"}
-                      </Badge>
+                      {g.did_play === false ? (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                          Did not play
+                        </Badge>
+                      ) : (
+                        <Badge variant={g.is_starter ? "default" : "outline"} className="text-[10px]">
+                          {g.is_starter ? "Starter" : "Bench"}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums">
                       {fmtPoints(g.points)}

@@ -74,6 +74,7 @@ export interface MatchupPlayer {
   player_id: string;
   points: number;
   is_starter: boolean;
+  did_play: boolean | null;
 }
 
 export interface PlayoffResult {

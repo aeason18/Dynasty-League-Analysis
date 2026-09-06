@@ -54,6 +54,7 @@ export interface PlayerGameLog {
   week: number;
   points: number;
   is_starter: boolean;
+  did_play: boolean | null;
   manager_name: string | null;
   team_name: string | null;
 }
@@ -86,6 +87,7 @@ export async function getPlayerGameLog(playerId: string): Promise<PlayerGameLog[
         week: row.week,
         points: Number(row.points),
         is_starter: row.is_starter,
+        did_play: row.did_play,
         manager_name: team?.manager?.display_name ?? null,
         team_name: team?.team_name ?? null,
       };
