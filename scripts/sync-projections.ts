@@ -178,12 +178,29 @@ async function main() {
     }
   }
 
-  // Rookies / players with no prior-season history: fall back to this run's
-  // own position average among players that DID get a regression projection.
-  const positionAverages = new Map<string, number>();
+  // Rookies / players with zero real playing time last season: fall back to
+  // a LOW percentile of this run's own regression-projected players at that
+  // position, not the mean. The pool of players who *do* get a regression
+  // projection is already a rostered dynasty roster's proven, productive
+  // players — its average is roughly a startable veteran's PPG, not a
+  // reasonable expectation for someone with no track record at all.
+  // Confirmed via testing: the mean fallback (12.64) landed almost exactly
+  // at the *median* of the real RB distribution (12.55) — i.e. treating an
+  // unproven rookie as good as a typical established starter. A rookie
+  // should default to backup/replacement level until they prove otherwise.
+  function percentile(sortedValues: number[], p: number): number {
+    if (sortedValues.length === 0) return 0;
+    const idx = Math.floor(p * (sortedValues.length - 1));
+    return sortedValues[idx];
+  }
+  const REPLACEMENT_LEVEL_PERCENTILE = 0.25;
+  const positionFallbackPpg = new Map<string, number>();
   for (const position of PROJECTABLE_POSITIONS) {
-    const values = [...projections.values()].filter((p) => p.position === position).map((p) => p.projected_ppg);
-    if (values.length > 0) positionAverages.set(position, values.reduce((s, v) => s + v, 0) / values.length);
+    const values = [...projections.values()]
+      .filter((p) => p.position === position)
+      .map((p) => p.projected_ppg)
+      .sort((a, b) => a - b);
+    if (values.length > 0) positionFallbackPpg.set(position, percentile(values, REPLACEMENT_LEVEL_PERCENTILE));
   }
   for (const playerId of rosteredPlayerIds) {
     if (projections.has(playerId)) continue;
@@ -192,7 +209,7 @@ async function main() {
     projections.set(playerId, {
       player_id: playerId,
       position,
-      projected_ppg: positionAverages.get(position) ?? 0,
+      projected_ppg: positionFallbackPpg.get(position) ?? 0,
       basis: "position_average",
       prior_season_ppg: null,
       prior_season_games: null,
