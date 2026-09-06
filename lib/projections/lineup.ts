@@ -10,9 +10,19 @@ export interface ProjectedRosterPlayer {
   projected_ppg: number;
 }
 
+export interface LineupSlot {
+  slot: string;
+  player: ProjectedRosterPlayer;
+}
+
+export interface OptimalLineup {
+  slots: LineupSlot[];
+  total: number;
+}
+
 const FLEX_ELIGIBLE = new Set(["RB", "WR", "TE"]);
 
-export function optimalLineupTotal(players: ProjectedRosterPlayer[], rosterPositions: string[]): number {
+export function pickOptimalLineup(players: ProjectedRosterPlayer[], rosterPositions: string[]): OptimalLineup {
   const requiredCounts = new Map<string, number>();
   let flexSlots = 0;
   for (const slot of rosterPositions) {
@@ -26,21 +36,25 @@ export function optimalLineupTotal(players: ProjectedRosterPlayer[], rosterPosit
 
   const remaining = [...players].sort((a, b) => b.projected_ppg - a.projected_ppg);
   const used = new Set<string>();
-  let total = 0;
+  const slots: LineupSlot[] = [];
 
   for (const [position, count] of requiredCounts) {
     const atPosition = remaining.filter((p) => p.position === position && !used.has(p.player_id));
     for (const p of atPosition.slice(0, count)) {
       used.add(p.player_id);
-      total += p.projected_ppg;
+      slots.push({ slot: position, player: p });
     }
   }
 
   const flexPool = remaining.filter((p) => FLEX_ELIGIBLE.has(p.position) && !used.has(p.player_id));
   for (const p of flexPool.slice(0, flexSlots)) {
     used.add(p.player_id);
-    total += p.projected_ppg;
+    slots.push({ slot: "FLEX", player: p });
   }
 
-  return total;
+  return { slots, total: slots.reduce((sum, s) => sum + s.player.projected_ppg, 0) };
+}
+
+export function optimalLineupTotal(players: ProjectedRosterPlayer[], rosterPositions: string[]): number {
+  return pickOptimalLineup(players, rosterPositions).total;
 }

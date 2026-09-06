@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trophy, TrendingUp } from "lucide-react";
 import { getTeamProjections, getNextWeekPredictions } from "@/lib/queries/projections";
 import { getCurrentLeague } from "@/lib/queries/leagues";
@@ -66,14 +67,16 @@ export default async function ProjectionsPage() {
                 </TableHeader>
                 <TableBody>
                   {teamProjections.map((row, i) => (
-                    <TableRow key={row.roster_id}>
+                    <TableRow key={row.roster_id} className="cursor-pointer">
                       <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
                       <TableCell>
-                        <TeamBadge
-                          name={row.team_name ?? row.manager?.display_name ?? `Team ${row.roster_id}`}
-                          subtitle={row.manager?.display_name}
-                          avatar={row.manager?.avatar}
-                        />
+                        <Link href={`/projections/${row.roster_id}`}>
+                          <TeamBadge
+                            name={row.team_name ?? row.manager?.display_name ?? `Team ${row.roster_id}`}
+                            subtitle={row.manager?.display_name}
+                            avatar={row.manager?.avatar}
+                          />
+                        </Link>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
                         {row.wins}-{row.losses}
