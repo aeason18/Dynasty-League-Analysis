@@ -125,3 +125,38 @@ export interface PlayerTeamPoints {
   games_played: number;
   ppg: number;
 }
+
+export interface NflPlayerIndexRow {
+  player_id: string;
+  full_name: string;
+  position: string;
+  team: string | null;
+}
+
+export type SentimentLabel = "positive" | "neutral" | "negative" | "no_data";
+
+export interface PlayerSentimentSnapshot {
+  id: number;
+  player_id: string;
+  computed_at: string;
+  window_days: number;
+  article_count: number;
+  positive_count: number;
+  neutral_count: number;
+  negative_count: number;
+  score: number | null;
+  label: SentimentLabel;
+  summary: string | null;
+}
+
+export interface PlayerSentimentArticle {
+  id: number;
+  snapshot_id: number;
+  url: string;
+  title: string;
+  source: string | null;
+  published_at: string | null;
+  sentiment_label: "positive" | "neutral" | "negative";
+  sentiment_score: number;
+  reason: string | null;
+}
