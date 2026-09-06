@@ -129,6 +129,12 @@ export interface RosterProjectionEntry {
   basis: "regression" | "position_average";
   prior_season_ppg: number | null;
   slot: string | null; // the lineup slot this player fills if they're a starter, else null (bench)
+  // Only meaningful when basis is "position_average": distinguishes a
+  // genuine rookie/new addition (no prior-season row at all) from a
+  // player who was rostered all last season but never once started —
+  // both end up with no starter-PPG signal, but they read very
+  // differently to a manager looking at the roster.
+  no_history_reason: "new_to_league" | "never_started" | null;
 }
 
 export interface TeamRosterBreakdown {
@@ -155,6 +161,24 @@ export async function getTeamRosterBreakdown(rosterId: number): Promise<TeamRost
   if (projErr) throw projErr;
   if (playersErr) throw playersErr;
 
+  // For the "no history" players specifically: were they rostered anywhere
+  // in this league last season at all (just never started), or are they
+  // genuinely new? Only worth the extra query for this small subset.
+  const noHistoryIds = (projections ?? []).filter((p) => p.basis === "position_average").map((p) => p.player_id);
+  const rosteredLastSeason = new Set<string>();
+  if (noHistoryIds.length > 0) {
+    const { data: priorLeagues } = await db.from("leagues").select("league_id, season").order("season");
+    const priorLeague = [...(priorLeagues ?? [])].reverse().find((l) => Number(l.season) < Number(league.season));
+    if (priorLeague) {
+      const { data: priorRows } = await db
+        .from("matchup_players")
+        .select("player_id")
+        .eq("league_id", priorLeague.league_id)
+        .in("player_id", noHistoryIds);
+      for (const row of priorRows ?? []) rosteredLastSeason.add(row.player_id);
+    }
+  }
+
   const nameById = new Map((players ?? []).map((p) => [p.player_id, p.full_name]));
   const projectable: (ProjectedRosterPlayer & { basis: "regression" | "position_average"; prior_season_ppg: number | null })[] = (
     projections ?? []
@@ -178,6 +202,7 @@ export async function getTeamRosterBreakdown(rosterId: number): Promise<TeamRost
     basis: p.basis,
     prior_season_ppg: p.prior_season_ppg,
     slot: slotByPlayerId.get(p.player_id) ?? null,
+    no_history_reason: p.basis === "position_average" ? (rosteredLastSeason.has(p.player_id) ? "never_started" : "new_to_league") : null,
   });
 
   const starters = slots

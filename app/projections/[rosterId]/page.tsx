@@ -25,9 +25,10 @@ export async function generateMetadata({ params }: { params: Promise<{ rosterId:
 }
 
 function RosterRow({ entry }: { entry: RosterProjectionEntry }) {
+  const slotLabel = entry.slot === "FLEX" ? `FLEX · ${entry.position}` : (entry.slot ?? entry.position);
   return (
     <TableRow>
-      <TableCell className="text-muted-foreground">{entry.slot ?? entry.position}</TableCell>
+      <TableCell className="text-muted-foreground">{slotLabel}</TableCell>
       <TableCell>
         <Link href={`/players/${entry.player_id}`} className="font-medium hover:text-primary">
           {entry.full_name}
@@ -38,9 +39,14 @@ function RosterRow({ entry }: { entry: RosterProjectionEntry }) {
         {entry.prior_season_ppg !== null ? fmtPoints(entry.prior_season_ppg) : "—"}
       </TableCell>
       <TableCell className="text-right">
-        {entry.basis === "position_average" && (
+        {entry.no_history_reason === "new_to_league" && (
           <Badge variant="outline" className="text-[10px] text-muted-foreground">
-            no history
+            rookie / new
+          </Badge>
+        )}
+        {entry.no_history_reason === "never_started" && (
+          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+            never started last season
           </Badge>
         )}
       </TableCell>
@@ -111,7 +117,9 @@ export default async function TeamProjectionPage({ params }: { params: Promise<{
         <h2 className="font-heading text-lg font-semibold tracking-tight">Projected Starting Lineup</h2>
         <p className="text-sm text-muted-foreground">
           The {roster.starters.length} highest-projected players at each required position — this total ({fmtPoints(team.projected_lineup_ppg)}{" "}
-          PPG) is what drives the team&apos;s simulated score every week.
+          PPG) is what drives the team&apos;s simulated score every week. This league&apos;s starting format is{" "}
+          {(league?.roster_positions ?? []).filter((s) => s !== "BN" && s !== "IR" && s !== "TAXI").join(", ")} — FLEX can be any RB/WR/TE,
+          shown here as &quot;FLEX · [position]&quot; so it&apos;s clear when it&apos;s filled by, say, a 3rd WR.
         </p>
         {roster.starters.length > 0 ? (
           <div className="overflow-x-auto rounded-2xl border border-border/60 bg-card">
