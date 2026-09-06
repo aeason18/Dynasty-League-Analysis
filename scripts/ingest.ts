@@ -202,6 +202,14 @@ async function main() {
       const isPlayoff = playoffWeekStart != null && week >= playoffWeekStart;
       const playoffRound = isPlayoff ? week - playoffWeekStart + 1 : null;
 
+      // Real per-player snap data, so we can tell "rostered but on a bye /
+      // inactive / injured" (didn't play) apart from "played, just scored
+      // low" — a fantasy matchup response alone can't distinguish those.
+      // Team defenses aren't covered by this endpoint at all; treated as
+      // always-played, matching prior behavior for them.
+      const weekStats = await sleeper.getWeekStats(league.season, week);
+      const isDefense = (pid: string) => pid.length <= 3 && pid === pid.toUpperCase();
+
       for (const m of matchups) {
         matchupRows.push({
           league_id: league.league_id,
@@ -222,6 +230,7 @@ async function main() {
             player_id: pid,
             points: pts ?? 0,
             is_starter: starters.has(pid),
+            did_play: isDefense(pid) ? true : (weekStats[pid]?.gp ?? 0) > 0,
           });
         }
       }

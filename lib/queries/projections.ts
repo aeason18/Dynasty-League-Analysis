@@ -131,10 +131,10 @@ export interface RosterProjectionEntry {
   slot: string | null; // the lineup slot this player fills if they're a starter, else null (bench)
   // Only meaningful when basis is "position_average": distinguishes a
   // genuine rookie/new addition (no prior-season row at all) from a
-  // player who was rostered all last season but never once started —
-  // both end up with no starter-PPG signal, but they read very
-  // differently to a manager looking at the roster.
-  no_history_reason: "new_to_league" | "never_started" | null;
+  // player who was rostered all last season but had zero snaps the whole
+  // time (bye/injury/inactive every single week) — both end up with no
+  // real PPG signal, but they read very differently to a manager.
+  no_history_reason: "new_to_league" | "no_snaps" | null;
 }
 
 export interface TeamRosterBreakdown {
@@ -162,7 +162,7 @@ export async function getTeamRosterBreakdown(rosterId: number): Promise<TeamRost
   if (playersErr) throw playersErr;
 
   // For the "no history" players specifically: were they rostered anywhere
-  // in this league last season at all (just never started), or are they
+  // in this league last season at all (just had zero snaps), or are they
   // genuinely new? Only worth the extra query for this small subset.
   const noHistoryIds = (projections ?? []).filter((p) => p.basis === "position_average").map((p) => p.player_id);
   const rosteredLastSeason = new Set<string>();
@@ -202,7 +202,7 @@ export async function getTeamRosterBreakdown(rosterId: number): Promise<TeamRost
     basis: p.basis,
     prior_season_ppg: p.prior_season_ppg,
     slot: slotByPlayerId.get(p.player_id) ?? null,
-    no_history_reason: p.basis === "position_average" ? (rosteredLastSeason.has(p.player_id) ? "never_started" : "new_to_league") : null,
+    no_history_reason: p.basis === "position_average" ? (rosteredLastSeason.has(p.player_id) ? "no_snaps" : "new_to_league") : null,
   });
 
   const starters = slots

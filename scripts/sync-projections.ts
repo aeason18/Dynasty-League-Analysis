@@ -26,13 +26,13 @@ interface LeagueRow {
 // exceeds that, so this must page through explicitly or it silently drops
 // most of the league (found via testing: several long-tenured starters
 // were missing prior-season data entirely because of this).
-async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_id: string; points: number; is_starter: boolean }[]> {
+async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_id: string; points: number; did_play: boolean | null }[]> {
   const PAGE = 1000;
-  const rows: { player_id: string; points: number; is_starter: boolean }[] = [];
+  const rows: { player_id: string; points: number; did_play: boolean | null }[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await db
       .from("matchup_players")
-      .select("player_id, points, is_starter")
+      .select("player_id, points, did_play")
       .eq("league_id", leagueId)
       .range(from, from + PAGE - 1);
     if (error) throw new Error(`matchup_players fetch failed: ${error.message}`);
@@ -42,20 +42,21 @@ async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_i
   return rows;
 }
 
-// PPG is computed from STARTER weeks only, not every roster-week. A
-// player's bench weeks (byes, committee timeshares, buried on a deep
-// bench) drag down an all-appearances average well below what they
-// actually produce when a manager plays them — and a team's real score
-// only ever comes from its starters, so that's the quantity worth
-// projecting. Confirmed via testing: switching to starter-only PPG closed
-// most of a ~35-point gap between this model's projected team totals and
-// this league's actual historical team-week average.
+// PPG excludes weeks a player genuinely didn't play at all (bye, injury,
+// healthy scratch — did_play is false, from Sleeper's real per-player snap
+// data), but keeps every week they were actually on the field regardless
+// of whether their fantasy manager started them. Whether a manager started
+// someone reflects that manager's judgment, not the player's own ability —
+// an earlier version of this filtered to starter-only weeks instead, which
+// threw away real signal for players who were mismanaged rather than bad
+// (e.g. a WR scoring real points every week but buried on a deep bench).
+// did_play is null for any not-yet-backfilled row, treated as played.
 async function seasonPpgByPlayer(leagueId: string): Promise<Map<string, { ppg: number; games: number; position: string }>> {
   const data = await fetchAllMatchupPlayerPoints(leagueId);
 
   const totals = new Map<string, { sum: number; games: number }>();
   for (const row of data ?? []) {
-    if (!row.is_starter) continue;
+    if (row.did_play === false) continue;
     const cur = totals.get(row.player_id) ?? { sum: 0, games: 0 };
     cur.sum += Number(row.points);
     cur.games += 1;

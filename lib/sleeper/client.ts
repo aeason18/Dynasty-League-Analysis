@@ -11,6 +11,7 @@ import type {
   SleeperTransaction,
   SleeperPlayer,
   SleeperNflState,
+  SleeperPlayerWeekStats,
 } from "./types";
 
 const BASE_URL = "https://api.sleeper.app/v1";
@@ -61,4 +62,10 @@ export const sleeper = {
   getAllPlayers: () => get<Record<string, SleeperPlayer>>(`/players/nfl`),
 
   getNflState: () => get<SleeperNflState>(`/state/nfl`),
+
+  // Every NFL player's real stat line for one week (thousands of entries,
+  // not scoped to any league) — used for `gp` (did they actually play),
+  // which a fantasy matchup response doesn't tell you on its own.
+  getWeekStats: (season: string, week: number) =>
+    get<Record<string, SleeperPlayerWeekStats>>(`/stats/nfl/regular/${season}/${week}`),
 };

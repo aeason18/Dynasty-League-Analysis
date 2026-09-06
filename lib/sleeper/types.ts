@@ -177,3 +177,20 @@ export interface SleeperNflState {
   display_week: number;
   previous_season: string;
 }
+
+// Real per-player weekly stats (offensive/defensive/special-teams snap
+// counts among many others) — a much broader stat line than the
+// fantasy-scoring-only `players_points` map in a matchup response. Only
+// `gp` (played this week at all) is used today; the raw snap counts are
+// kept typed here since they're the more precise "how much did they play"
+// signal if that's ever needed.
+export interface SleeperPlayerWeekStats {
+  gp?: number;
+  gms_active?: number;
+  off_snp?: number;
+  def_snp?: number;
+  st_snp?: number;
+  tm_off_snp?: number;
+  tm_def_snp?: number;
+  tm_st_snp?: number;
+}

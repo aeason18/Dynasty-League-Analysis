@@ -44,9 +44,9 @@ function RosterRow({ entry }: { entry: RosterProjectionEntry }) {
             rookie / new
           </Badge>
         )}
-        {entry.no_history_reason === "never_started" && (
+        {entry.no_history_reason === "no_snaps" && (
           <Badge variant="outline" className="text-[10px] text-muted-foreground">
-            never started last season
+            no snaps last season
           </Badge>
         )}
       </TableCell>
