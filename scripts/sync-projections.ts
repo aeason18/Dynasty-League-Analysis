@@ -26,13 +26,13 @@ interface LeagueRow {
 // exceeds that, so this must page through explicitly or it silently drops
 // most of the league (found via testing: several long-tenured starters
 // were missing prior-season data entirely because of this).
-async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_id: string; points: number }[]> {
+async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_id: string; points: number; is_starter: boolean }[]> {
   const PAGE = 1000;
-  const rows: { player_id: string; points: number }[] = [];
+  const rows: { player_id: string; points: number; is_starter: boolean }[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await db
       .from("matchup_players")
-      .select("player_id, points")
+      .select("player_id, points, is_starter")
       .eq("league_id", leagueId)
       .range(from, from + PAGE - 1);
     if (error) throw new Error(`matchup_players fetch failed: ${error.message}`);
@@ -42,11 +42,20 @@ async function fetchAllMatchupPlayerPoints(leagueId: string): Promise<{ player_i
   return rows;
 }
 
+// PPG is computed from STARTER weeks only, not every roster-week. A
+// player's bench weeks (byes, committee timeshares, buried on a deep
+// bench) drag down an all-appearances average well below what they
+// actually produce when a manager plays them — and a team's real score
+// only ever comes from its starters, so that's the quantity worth
+// projecting. Confirmed via testing: switching to starter-only PPG closed
+// most of a ~35-point gap between this model's projected team totals and
+// this league's actual historical team-week average.
 async function seasonPpgByPlayer(leagueId: string): Promise<Map<string, { ppg: number; games: number; position: string }>> {
   const data = await fetchAllMatchupPlayerPoints(leagueId);
 
   const totals = new Map<string, { sum: number; games: number }>();
   for (const row of data ?? []) {
+    if (!row.is_starter) continue;
     const cur = totals.get(row.player_id) ?? { sum: 0, games: 0 };
     cur.sum += Number(row.points);
     cur.games += 1;
@@ -93,15 +102,16 @@ async function main() {
     return seasonPpgCache.get(leagueId)!;
   }
 
-  // A prior-season PPG computed over only a handful of games (injury,
-  // late-season add) is a much noisier estimate of true ability than one
-  // over a full season — feeding both in as if equally reliable measurably
-  // biases the fitted slope toward zero (regression dilution/attenuation:
-  // confirmed by testing this on real data — RB's R² nearly doubled and its
-  // PPG coefficient rose from 0.46 to 0.63 once shortened prior seasons
-  // were excluded). This only gates which seasons count as *training*
-  // examples; every rostered player still gets a final projection below.
-  const MIN_PRIOR_GAMES_FOR_TRAINING = 6;
+  // A prior-season PPG computed over only a handful of starts (injury,
+  // committee timeshare, late-season call-up) is a much noisier estimate of
+  // true ability than one over most of a season — feeding both in as if
+  // equally reliable measurably biases the fitted slope toward zero
+  // (regression dilution/attenuation, confirmed on real data). Starter
+  // counts run lower than roster-week counts, so the floor here is lower
+  // than a "played in N games" threshold would be. This only gates which
+  // seasons count as *training* examples; every rostered player still gets
+  // a final projection below.
+  const MIN_PRIOR_GAMES_FOR_TRAINING = 4;
 
   const trainingExamples: TrainingExample[] = [];
   for (let i = 0; i < leagues.length - 1; i++) {
