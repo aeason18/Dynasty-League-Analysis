@@ -12,7 +12,6 @@
     "ingest": "tsx scripts/ingest.ts",
     "sync:fantasycalc": "tsx scripts/sync-fantasycalc.ts",
     "resolve:picks": "tsx scripts/resolve-draft-picks.ts",
-    "sync:projections": "tsx scripts/sync-projections.ts",
     "backfill:snap-participation": "tsx scripts/backfill-snap-participation.ts"
   },
   "dependencies": {

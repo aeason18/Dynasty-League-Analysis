@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { href: "/matchups", label: "Matchups" },
   { href: "/records", label: "Records" },
   { href: "/trades", label: "Trades" },
-  { href: "/projections", label: "Projections" },
 ];
 
 function NavLinks({ onNavigate, className }: { onNavigate?: () => void; className?: string }) {
