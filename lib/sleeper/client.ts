@@ -16,12 +16,30 @@ import type {
 
 const BASE_URL = "https://api.sleeper.app/v1";
 
+// Sleeper occasionally 502s on an otherwise-valid request (seen in practice
+// on /draft/:id/picks, which killed an entire weekly sync run over one
+// transient blip). Retry transient statuses a couple of times with backoff
+// before giving up — a real 4xx (bad league/draft id) still fails fast.
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`);
-  if (!res.ok) {
-    throw new Error(`Sleeper API request failed: ${path} (${res.status})`);
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(`${BASE_URL}${path}`);
+    if (res.ok) return (await res.json()) as T;
+
+    lastError = new Error(`Sleeper API request failed: ${path} (${res.status})`);
+    if (!RETRYABLE_STATUSES.has(res.status) || attempt === MAX_ATTEMPTS) {
+      throw lastError;
+    }
+    await sleep(500 * attempt);
   }
-  return (await res.json()) as T;
+  throw lastError;
 }
 
 export const sleeper = {
