@@ -2,13 +2,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getPlayer, getPlayerTeamSplits, getPlayerGameLog } from "@/lib/queries/players";
+import { getProjectedNextSeasonPpg, isSupportedPosition } from "@/lib/ml-api/client";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { PlayerPointsChart } from "@/components/charts/player-points-chart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { fmtPoints } from "@/lib/format";
-import { Target, Gauge, Repeat, TrendingUp } from "lucide-react";
+import { Target, Gauge, Repeat, TrendingUp, Sparkles } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -34,6 +35,33 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const totalGames = playedGames.length;
   const ppg = totalGames ? totalPoints / totalGames : 0;
   const bestGame = gameLog.length ? [...gameLog].sort((a, b) => b.points - a.points)[0] : null;
+
+  // The model was trained on single-season stats (fit_pipeline.py groups
+  // matchup_players by player+season), so it needs this player's most
+  // recent season's numbers here — not the career totals above, which
+  // would blow past the API's per-season bounds (e.g. games_played <= 18).
+  const latestSeason = playedGames.length
+    ? playedGames.reduce((max, g) => (g.season > max ? g.season : max), playedGames[0].season)
+    : null;
+  const latestSeasonGames = latestSeason ? playedGames.filter((g) => g.season === latestSeason) : [];
+  const latestSeasonPoints = latestSeasonGames.reduce((sum, g) => sum + g.points, 0);
+  const latestSeasonGameCount = latestSeasonGames.length;
+
+  // Live call to the dynasty-ppg-api Modal deployment (see ml_api/ at the
+  // repo root) — not a local heuristic. Returns null (card omitted) for
+  // unsupported positions, players with no played games this season, or if
+  // the API is unreachable, since this is a supplementary projection, not
+  // core data.
+  const projection =
+    isSupportedPosition(player.position) && latestSeasonGameCount > 0
+      ? await getProjectedNextSeasonPpg({
+          position: player.position,
+          season_ppg: latestSeasonPoints / latestSeasonGameCount,
+          season_games_played: latestSeasonGameCount,
+          season_total_points: latestSeasonPoints,
+          years_exp: player.years_exp ?? 0,
+        })
+      : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -68,6 +96,17 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           icon={TrendingUp}
         />
       </div>
+
+      {projection && (
+        <StatCard
+          label="Projected Next Season PPG"
+          value={fmtPoints(projection.predicted_next_season_ppg)}
+          sublabel="Live prediction from the dynasty-ppg-api model — illustrative, not a guarantee"
+          icon={Sparkles}
+          accent="accent"
+          className="lg:max-w-xs"
+        />
+      )}
 
       <section className="flex flex-col gap-4">
         <h2 className="font-heading text-lg font-semibold tracking-tight">Scoring History</h2>

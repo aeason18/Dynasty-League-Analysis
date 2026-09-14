@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Dynasty PPG Projection API",
+    "description": "Assertions against the live Modal deployment of ml_api/. Requires the Modal Proxy Auth token pair (see collection variables) — create one with `modal workspace proxy-tokens create` and paste the values in, or override at the environment level.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://aeason18--dynasty-ppg-api-fastapi-app.modal.run", "type": "string" },
+    { "key": "modal_key", "value": "", "type": "secret" },
+    { "key": "modal_secret", "value": "", "type": "secret" }
+  ],
+  "auth": null,
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Modal-Key", "value": "{{modal_key}}" },
+          { "key": "Modal-Secret", "value": "{{modal_secret}}" }
+        ],
+        "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('model is loaded', () => pm.expect(body.model_loaded).to.eql(true));",
+              "pm.test('status field is ok', () => pm.expect(body.status).to.eql('ok'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pipeline Info",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Modal-Key", "value": "{{modal_key}}" },
+          { "key": "Modal-Secret", "value": "{{modal_secret}}" }
+        ],
+        "url": { "raw": "{{base_url}}/info", "host": ["{{base_url}}"], "path": ["info"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('has fitted pipeline metadata', () => {",
+              "  pm.expect(body.metadata).to.have.property('sklearn_version');",
+              "  pm.expect(body.metadata).to.have.property('built_at');",
+              "  pm.expect(body.metadata.steps).to.be.an('array').that.is.not.empty;",
+              "});",
+              "pm.test('reports feature schema', () => {",
+              "  pm.expect(body.feature_columns).to.include('position');",
+              "  pm.expect(body.position_categories).to.include('RB');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Predict - valid input (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Modal-Key", "value": "{{modal_key}}" },
+          { "key": "Modal-Secret", "value": "{{modal_secret}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"position\": \"RB\",\n  \"season_ppg\": 12.5,\n  \"season_games_played\": 15,\n  \"season_total_points\": 187.5,\n  \"years_exp\": 3\n}"
+        },
+        "url": { "raw": "{{base_url}}/predict", "host": ["{{base_url}}"], "path": ["predict"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('returns a numeric prediction', () => {",
+              "  pm.expect(body).to.have.property('predicted_next_season_ppg');",
+              "  pm.expect(typeof body.predicted_next_season_ppg).to.eql('number');",
+              "});",
+              "pm.test('echoes the validated input', () => pm.expect(body.input.position).to.eql('RB'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Predict - invalid enum (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Modal-Key", "value": "{{modal_key}}" },
+          { "key": "Modal-Secret", "value": "{{modal_secret}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"position\": \"KICKER\",\n  \"season_ppg\": 12.5,\n  \"season_games_played\": 15,\n  \"season_total_points\": 187.5,\n  \"years_exp\": 3\n}"
+        },
+        "url": { "raw": "{{base_url}}/predict", "host": ["{{base_url}}"], "path": ["predict"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 422 for an unsupported position', () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Predict - out of bounds (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Modal-Key", "value": "{{modal_key}}" },
+          { "key": "Modal-Secret", "value": "{{modal_secret}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"position\": \"RB\",\n  \"season_ppg\": 999,\n  \"season_games_played\": 15,\n  \"season_total_points\": 187.5,\n  \"years_exp\": 3\n}"
+        },
+        "url": { "raw": "{{base_url}}/predict", "host": ["{{base_url}}"], "path": ["predict"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 422 for season_ppg over the Field bound', () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

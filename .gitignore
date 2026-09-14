@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# ml_api (python)
+ml_api/.venv
+ml_api/__pycache__
+ml_api/**/__pycache__
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
