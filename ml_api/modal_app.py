@@ -33,6 +33,7 @@ image = (
         "fastapi==0.141.1",
         "pydantic==2.13.5",
     )
+    .add_local_file(ROOT / "schemas.py", remote_path="/app/schemas.py", copy=True)
     .add_local_file(ROOT / "pipeline_def.py", remote_path="/app/pipeline_def.py", copy=True)
     .add_local_file(ROOT / "serve.py", remote_path="/app/serve.py", copy=True)
     .add_local_file(ROOT / "pipeline.joblib", remote_path="/app/pipeline.joblib", copy=True)

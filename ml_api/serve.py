@@ -10,15 +10,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Literal
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).parent))
 import pipeline_def  # noqa: F401 — must be imported so joblib can resolve PositionalScaler when unpickling
+from schemas import PredictRequest, PredictResponse
 
 ARTIFACT_PATH = Path(__file__).parent / "pipeline.joblib"
 
@@ -31,19 +30,6 @@ except Exception as exc:  # noqa: BLE001 — any load failure should degrade to 
     _load_error = f"{type(exc).__name__}: {exc}"
 
 app = FastAPI(title="Dynasty PPG Projection API")
-
-
-class PredictRequest(BaseModel):
-    position: Literal["QB", "RB", "WR", "TE"]
-    season_ppg: float = Field(..., ge=0, le=60, description="This season's points-per-game (played weeks only)")
-    season_games_played: int = Field(..., ge=1, le=18, description="Weeks actually played this season")
-    season_total_points: float = Field(..., ge=0, le=1000, description="This season's total fantasy points")
-    years_exp: int = Field(..., ge=0, le=25, description="NFL seasons of experience")
-
-
-class PredictResponse(BaseModel):
-    predicted_next_season_ppg: float
-    input: PredictRequest
 
 
 def _require_bundle() -> dict:
