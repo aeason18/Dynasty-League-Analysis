@@ -49,9 +49,27 @@ export default async function PlayerDetailPage({
   // matchup_players by player+season), so it needs this player's most
   // recent season's numbers here — not the career totals above, which
   // would blow past the API's per-season bounds (e.g. games_played <= 18).
-  const latestSeason = playedGames.length
-    ? playedGames.reduce((max, g) => (g.season > max ? g.season : max), playedGames[0].season)
-    : null;
+  //
+  // "Most recent" has to mean a season with a real sample, not just the
+  // highest season string — early in a new season that's the in-progress
+  // one, which might only have a game or two played. Feeding the model a
+  // 1-game season (e.g. one huge week) as if it were a full-season rate is
+  // wildly out of distribution for a model trained on full seasons, and it
+  // regresses hard toward a low prediction. Require a handful of games
+  // before trusting a season's numbers; otherwise fall back to the last
+  // season that had one, all the way down to the oldest if that's all a
+  // player has (e.g. a rookie a few weeks into their first season).
+  const PROJECTION_MIN_GAMES = 4;
+  const seasonsPlayed = Array.from(new Set(playedGames.map((g) => g.season))).sort();
+  let latestSeason: string | null = null;
+  for (let i = seasonsPlayed.length - 1; i >= 0; i--) {
+    const season = seasonsPlayed[i];
+    const gamesInSeason = playedGames.filter((g) => g.season === season).length;
+    if (gamesInSeason >= PROJECTION_MIN_GAMES || i === 0) {
+      latestSeason = season;
+      break;
+    }
+  }
   const latestSeasonGames = latestSeason ? playedGames.filter((g) => g.season === latestSeason) : [];
   const latestSeasonPoints = latestSeasonGames.reduce((sum, g) => sum + g.points, 0);
   const latestSeasonGameCount = latestSeasonGames.length;
