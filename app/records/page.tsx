@@ -1,7 +1,9 @@
 import { getLeagueRecords } from "@/lib/queries/records";
+import { getSeasons } from "@/lib/queries/games";
 import { PageHeader } from "@/components/page-header";
 import { TeamBadge } from "@/components/team-badge";
 import { EmptyState } from "@/components/empty-state";
+import { RecordsFilters } from "@/components/records-filters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtPoints } from "@/lib/format";
 import type { Game } from "@/lib/queries/games";
@@ -10,8 +12,15 @@ import type { PlayerPerformance, StreakRecord } from "@/lib/queries/records";
 export const revalidate = 300;
 export const metadata = { title: "Records" };
 
-export default async function RecordsPage() {
-  const records = await getLeagueRecords();
+export default async function RecordsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ since?: string }>;
+}) {
+  const { since } = await searchParams;
+  const seasons = await getSeasons();
+  const sinceSeason = since && seasons.includes(since) ? since : undefined;
+  const records = await getLeagueRecords({ sinceSeason });
   const hasAnyData = records.highestScores.length > 0;
 
   return (
@@ -19,11 +28,23 @@ export default async function RecordsPage() {
       <PageHeader
         eyebrow="Records"
         title="League Records"
-        description="Every notable record in this dynasty's history, computed from real game and player data."
+        description={
+          sinceSeason
+            ? `Every notable record since the ${sinceSeason} season, computed from real game and player data.`
+            : "Every notable record in this dynasty's history, computed from real game and player data."
+        }
+        actions={<RecordsFilters seasons={seasons} initialSince={sinceSeason ?? "ALL"} />}
       />
 
       {!hasAnyData ? (
-        <EmptyState title="No records yet" description="Records will populate once games have been played." />
+        <EmptyState
+          title="No records yet"
+          description={
+            sinceSeason
+              ? `No games played since the ${sinceSeason} season.`
+              : "Records will populate once games have been played."
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <RecordCard title="Highest Single-Game Scores">

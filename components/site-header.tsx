@@ -32,7 +32,7 @@ function NavLinks({ onNavigate, className }: { onNavigate?: () => void; classNam
               "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
               active
                 ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             {item.label}

@@ -66,8 +66,9 @@ export interface PlayerPerformance {
   team_name: string | null;
 }
 
-export async function getLeagueRecords() {
-  const games = await getAllGames();
+export async function getLeagueRecords({ sinceSeason }: { sinceSeason?: string } = {}) {
+  const allGames = await getAllGames();
+  const games = sinceSeason ? allGames.filter((g) => g.season >= sinceSeason) : allGames;
   const uniqueMatchups = dedupeMatchups(games);
   const decided = games.filter((g) => g.opp_points != null);
 
@@ -173,6 +174,7 @@ export async function getLeagueRecords() {
 
   const bestPerformances: PlayerPerformance[] = ((matchupPlayers ?? []) as unknown as MatchupPlayerWithPlayer[])
     .filter((mp) => mp.player?.position !== "DEF")
+    .filter((mp) => !sinceSeason || (seasonByLeague.get(mp.league_id) ?? "") >= sinceSeason)
     .slice(0, 10)
     .map((mp) => {
       const team = teamByKey.get(`${mp.league_id}:${mp.roster_id}`);

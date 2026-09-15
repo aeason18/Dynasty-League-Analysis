@@ -49,45 +49,45 @@
 }
 
 /*
- * Fantasy League Archive brand theme — mossy forest.
- * Single committed dark aesthetic (no light-mode toggle) — dark forest-floor
+ * Fantasy League Archive brand theme — light.
+ * Single committed light aesthetic (no dark-mode toggle) — white/off-white
  * ground, sage/moss green as the primary "performance" accent, warm amber
- * (dappled canopy light) reserved for records & achievements, and a muted
- * terracotta/rust in place of a harsh red for losses/negatives.
+ * reserved for records & achievements, and a muted terracotta/rust in place
+ * of a harsh red for losses/negatives.
  */
 :root {
-  --background: oklch(0.16 0.02 145);
-  --foreground: oklch(0.93 0.01 100);
-  --card: oklch(0.21 0.025 145);
-  --card-foreground: oklch(0.93 0.01 100);
-  --popover: oklch(0.2 0.025 145);
-  --popover-foreground: oklch(0.93 0.01 100);
-  --primary: oklch(0.72 0.13 142);
-  --primary-foreground: oklch(0.14 0.03 142);
-  --secondary: oklch(0.27 0.025 140);
-  --secondary-foreground: oklch(0.93 0.01 100);
-  --muted: oklch(0.25 0.02 140);
-  --muted-foreground: oklch(0.68 0.03 120);
-  --accent: oklch(0.78 0.13 80);
-  --accent-foreground: oklch(0.16 0.03 80);
-  --destructive: oklch(0.64 0.18 35);
-  --border: oklch(0.95 0.03 100 / 10%);
-  --input: oklch(0.95 0.03 100 / 14%);
-  --ring: oklch(0.72 0.13 142 / 45%);
-  --chart-1: oklch(0.7 0.14 142);
-  --chart-2: oklch(0.78 0.13 80);
-  --chart-3: oklch(0.68 0.1 200);
-  --chart-4: oklch(0.64 0.18 35);
-  --chart-5: oklch(0.58 0.07 50);
+  --background: oklch(0.99 0.004 100);
+  --foreground: oklch(0.2 0.025 145);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.025 145);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.025 145);
+  --primary: oklch(0.52 0.13 142);
+  --primary-foreground: oklch(0.98 0.01 100);
+  --secondary: oklch(0.95 0.015 140);
+  --secondary-foreground: oklch(0.24 0.03 145);
+  --muted: oklch(0.96 0.01 140);
+  --muted-foreground: oklch(0.47 0.03 130);
+  --accent: oklch(0.92 0.07 80);
+  --accent-foreground: oklch(0.32 0.09 75);
+  --destructive: oklch(0.56 0.19 32);
+  --border: oklch(0.2 0.03 145 / 10%);
+  --input: oklch(0.2 0.03 145 / 12%);
+  --ring: oklch(0.52 0.13 142 / 45%);
+  --chart-1: oklch(0.58 0.14 142);
+  --chart-2: oklch(0.68 0.14 80);
+  --chart-3: oklch(0.58 0.1 200);
+  --chart-4: oklch(0.56 0.19 32);
+  --chart-5: oklch(0.5 0.08 50);
   --radius: 0.75rem;
-  --sidebar: oklch(0.14 0.018 145);
-  --sidebar-foreground: oklch(0.91 0.01 100);
-  --sidebar-primary: oklch(0.72 0.13 142);
-  --sidebar-primary-foreground: oklch(0.14 0.03 142);
-  --sidebar-accent: oklch(0.24 0.022 140);
-  --sidebar-accent-foreground: oklch(0.93 0.01 100);
-  --sidebar-border: oklch(0.95 0.03 100 / 9%);
-  --sidebar-ring: oklch(0.72 0.13 142 / 45%);
+  --sidebar: oklch(0.98 0.004 100);
+  --sidebar-foreground: oklch(0.22 0.025 145);
+  --sidebar-primary: oklch(0.52 0.13 142);
+  --sidebar-primary-foreground: oklch(0.98 0.01 100);
+  --sidebar-accent: oklch(0.94 0.02 140);
+  --sidebar-accent-foreground: oklch(0.22 0.025 145);
+  --sidebar-border: oklch(0.2 0.03 145 / 8%);
+  --sidebar-ring: oklch(0.52 0.13 142 / 45%);
 }
 
 .dark {

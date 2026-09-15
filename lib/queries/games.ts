@@ -203,3 +203,11 @@ export async function getAllGames(): Promise<Game[]> {
   games.sort((a, b) => (a.season === b.season ? a.week - b.week : a.season.localeCompare(b.season)));
   return games;
 }
+
+/** Every season with a played league, sorted ascending (oldest first). */
+export async function getSeasons(): Promise<string[]> {
+  const db = createReadClient();
+  const { data, error } = await db.from("leagues").select("season");
+  if (error) throw error;
+  return Array.from(new Set((data ?? []).map((l) => l.season as string))).sort();
+}

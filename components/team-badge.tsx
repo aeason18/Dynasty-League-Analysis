@@ -18,7 +18,7 @@ export function TeamBadge({
   const dims = size === "sm" ? "h-6 w-6" : size === "lg" ? "h-11 w-11" : "h-8 w-8";
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
-      <Avatar className={cn(dims, "shrink-0 border border-border/60")}>
+      <Avatar className={cn(dims, "shrink-0 ring-1 ring-foreground/15")}>
         <AvatarImage src={sleeperAvatarUrl(avatar ?? null) ?? undefined} alt={name} />
         <AvatarFallback className="bg-secondary text-[10px] font-semibold text-secondary-foreground">
           {initials(name)}
