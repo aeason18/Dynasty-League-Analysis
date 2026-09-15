@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getPlayer, getPlayerTeamSplits, getPlayerGameLog } from "@/lib/queries/players";
+import { resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { getProjectedNextSeasonPpg, isSupportedPosition } from "@/lib/ml-api/client";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
@@ -19,12 +20,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: player?.full_name ?? "Player" };
 }
 
-export default async function PlayerDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function PlayerDetailPage({
+  params,
+}: {
+  params: Promise<{ leagueId: string; id: string }>;
+}) {
+  const { leagueId, id } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
   const player = await getPlayer(id);
   if (!player) notFound();
 
-  const [teamSplits, gameLog] = await Promise.all([getPlayerTeamSplits(id), getPlayerGameLog(id)]);
+  const [teamSplits, gameLog] = await Promise.all([
+    getPlayerTeamSplits(leagueGroupId, id),
+    getPlayerGameLog(leagueGroupId, id),
+  ]);
 
   // Bye/injury/inactive weeks (did_play === false) are shown in the log
   // below for a complete history, but shouldn't count toward games-played
@@ -67,7 +76,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     <div className="flex flex-col gap-8">
       <div>
         <Link
-          href="/players"
+          href={`/${leagueId}/players`}
           className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Players

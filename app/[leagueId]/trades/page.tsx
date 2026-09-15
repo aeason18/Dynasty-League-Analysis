@@ -1,5 +1,5 @@
 import { getTrades, getTradeLeaderboard, getMostLopsidedTrades } from "@/lib/queries/trades";
-import { getLeagues } from "@/lib/queries/leagues";
+import { getLeagues, resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { getAllFranchiseManagers } from "@/lib/queries/franchise";
 import { PageHeader } from "@/components/page-header";
 import { SeasonSelect } from "@/components/season-select";
@@ -15,16 +15,20 @@ export const revalidate = 300;
 export const metadata = { title: "Trades" };
 
 export default async function TradesPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ leagueId: string }>;
   searchParams: Promise<{ season?: string; manager?: string }>;
 }) {
+  const { leagueId } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
   const { season: seasonParam, manager: managerParam } = await searchParams;
   const [trades, leaderboard, leagues, managers] = await Promise.all([
-    getTrades(),
-    getTradeLeaderboard(),
-    getLeagues(),
-    getAllFranchiseManagers(),
+    getTrades(leagueGroupId),
+    getTradeLeaderboard(leagueGroupId),
+    getLeagues(leagueGroupId),
+    getAllFranchiseManagers(leagueGroupId),
   ]);
 
   const seasons = ["All", ...leagues.map((l) => l.season)];

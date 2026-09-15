@@ -1,4 +1,4 @@
-import { getLeagues } from "@/lib/queries/leagues";
+import { getLeagues, resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { getSeasonMatchups, getHeadToHead, listManagersWithGames } from "@/lib/queries/matchups";
 import { getLeagueOverview } from "@/lib/queries/dashboard";
 import { PageHeader } from "@/components/page-header";
@@ -13,20 +13,24 @@ export const revalidate = 300;
 export const metadata = { title: "Matchups" };
 
 export default async function MatchupsPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ leagueId: string }>;
   searchParams: Promise<{ season?: string; managerA?: string; managerB?: string }>;
 }) {
+  const { leagueId } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
   const { season: seasonParam, managerA, managerB } = await searchParams;
   const [leagues, overview, managers] = await Promise.all([
-    getLeagues(),
-    getLeagueOverview(),
-    listManagersWithGames(),
+    getLeagues(leagueGroupId),
+    getLeagueOverview(leagueGroupId),
+    listManagersWithGames(leagueGroupId),
   ]);
 
   const seasons = leagues.map((l) => l.season);
   const selectedSeason = seasonParam && seasons.includes(seasonParam) ? seasonParam : overview.currentSeason ?? seasons.at(-1)!;
-  const matchups = await getSeasonMatchups(selectedSeason);
+  const matchups = await getSeasonMatchups(leagueGroupId, selectedSeason);
 
   // Grouped by weekLabel (not raw week number) so a merged multi-week round
   // (e.g. "17-18") doesn't get lumped in with unrelated single-week games
@@ -45,7 +49,10 @@ export default async function MatchupsPage({
 
   const resolvedA = managerA ?? managers[0]?.id;
   const resolvedB = managerB ?? managers[1]?.id;
-  const h2h = resolvedA && resolvedB && resolvedA !== resolvedB ? await getHeadToHead(resolvedA, resolvedB) : null;
+  const h2h =
+    resolvedA && resolvedB && resolvedA !== resolvedB
+      ? await getHeadToHead(leagueGroupId, resolvedA, resolvedB)
+      : null;
   const nameA = managers.find((m) => m.id === resolvedA)?.name;
   const nameB = managers.find((m) => m.id === resolvedB)?.name;
 

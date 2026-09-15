@@ -1,5 +1,6 @@
 import { getLeagueRecords } from "@/lib/queries/records";
 import { getSeasons } from "@/lib/queries/games";
+import { resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { PageHeader } from "@/components/page-header";
 import { TeamBadge } from "@/components/team-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -13,14 +14,18 @@ export const revalidate = 300;
 export const metadata = { title: "Records" };
 
 export default async function RecordsPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ leagueId: string }>;
   searchParams: Promise<{ since?: string }>;
 }) {
+  const { leagueId } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
   const { since } = await searchParams;
-  const seasons = await getSeasons();
+  const seasons = await getSeasons(leagueGroupId);
   const sinceSeason = since && seasons.includes(since) ? since : undefined;
-  const records = await getLeagueRecords({ sinceSeason });
+  const records = await getLeagueRecords(leagueGroupId, { sinceSeason });
   const hasAnyData = records.highestScores.length > 0;
 
   return (

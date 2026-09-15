@@ -28,11 +28,12 @@ export async function getStandingsForSeason(leagueId: string): Promise<Standings
   }));
 }
 
-export async function getManagerCareerStats() {
+export async function getManagerCareerStats(leagueGroupId: string) {
   const db = createReadClient();
   const { data, error } = await db
     .from("manager_career_stats")
     .select("*")
+    .eq("league_group_id", leagueGroupId)
     .order("wins", { ascending: false });
   if (error) throw error;
   return data ?? [];

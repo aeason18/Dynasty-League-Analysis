@@ -66,8 +66,11 @@ export interface PlayerPerformance {
   team_name: string | null;
 }
 
-export async function getLeagueRecords({ sinceSeason }: { sinceSeason?: string } = {}) {
-  const allGames = await getAllGames();
+export async function getLeagueRecords(
+  leagueGroupId: string,
+  { sinceSeason }: { sinceSeason?: string } = {}
+) {
+  const allGames = await getAllGames(leagueGroupId);
   const games = sinceSeason ? allGames.filter((g) => g.season >= sinceSeason) : allGames;
   const uniqueMatchups = dedupeMatchups(games);
   const decided = games.filter((g) => g.opp_points != null);
@@ -158,12 +161,16 @@ export async function getLeagueRecords({ sinceSeason }: { sinceSeason?: string }
   const { data: matchupPlayers, error } = await db
     .from("matchup_players")
     .select("*, player:players(full_name, position)")
+    .eq("league_group_id", leagueGroupId)
     .order("points", { ascending: false })
     .limit(200);
   if (error) throw error;
 
-  const { data: leagues } = await db.from("leagues").select("league_id, season");
-  const { data: teamSeasons } = await db.from("team_seasons").select("*, manager:managers(display_name)");
+  const { data: leagues } = await db.from("leagues").select("league_id, season").eq("league_group_id", leagueGroupId);
+  const { data: teamSeasons } = await db
+    .from("team_seasons")
+    .select("*, manager:managers(display_name)")
+    .eq("league_group_id", leagueGroupId);
   const seasonByLeague = new Map((leagues ?? []).map((l) => [l.league_id, l.season as string]));
   const teamByKey = new Map(
     ((teamSeasons ?? []) as unknown as TeamSeasonWithManager[]).map((t) => [

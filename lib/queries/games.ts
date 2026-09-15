@@ -116,14 +116,14 @@ function mergeMultiWeekPlayoffRounds(rawGroups: MatchGroup[]): Map<string, Merge
  * (~400 rows across the league's history) so we do the pairing/derivation
  * in memory rather than in SQL.
  */
-export async function getAllGames(): Promise<Game[]> {
+export async function getAllGames(leagueGroupId: string): Promise<Game[]> {
   const db = createReadClient();
 
   const [{ data: matchups, error: mErr }, { data: teamSeasons, error: tErr }, { data: leagues, error: lErr }] =
     await Promise.all([
-      db.from("matchups").select("*"),
-      db.from("team_seasons").select("*, manager:managers(*)"),
-      db.from("leagues").select("league_id, season"),
+      db.from("matchups").select("*").eq("league_group_id", leagueGroupId),
+      db.from("team_seasons").select("*, manager:managers(*)").eq("league_group_id", leagueGroupId),
+      db.from("leagues").select("league_id, season").eq("league_group_id", leagueGroupId),
     ]);
   if (mErr) throw mErr;
   if (tErr) throw tErr;
@@ -205,9 +205,9 @@ export async function getAllGames(): Promise<Game[]> {
 }
 
 /** Every season with a played league, sorted ascending (oldest first). */
-export async function getSeasons(): Promise<string[]> {
+export async function getSeasons(leagueGroupId: string): Promise<string[]> {
   const db = createReadClient();
-  const { data, error } = await db.from("leagues").select("season");
+  const { data, error } = await db.from("leagues").select("season").eq("league_group_id", leagueGroupId);
   if (error) throw error;
   return Array.from(new Set((data ?? []).map((l) => l.season as string))).sort();
 }

@@ -53,7 +53,7 @@ interface ResolvedPickRow {
 
 type TeamSeasonWithManager = TeamSeason & { manager: Manager | null };
 
-export async function getTrades(): Promise<Trade[]> {
+export async function getTrades(leagueGroupId: string): Promise<Trade[]> {
   const db = createReadClient();
 
   const [
@@ -64,11 +64,19 @@ export async function getTrades(): Promise<Trade[]> {
     { data: resolvedPicks, error: rpErr },
     { data: players, error: pErr },
   ] = await Promise.all([
-    db.from("transactions").select("*").eq("type", "trade").eq("status", "complete"),
-    db.from("leagues").select("league_id, season"),
-    db.from("team_seasons").select("*, manager:managers(*)"),
+    db
+      .from("transactions")
+      .select("*")
+      .eq("league_group_id", leagueGroupId)
+      .eq("type", "trade")
+      .eq("status", "complete"),
+    db.from("leagues").select("league_id, season").eq("league_group_id", leagueGroupId),
+    db.from("team_seasons").select("*, manager:managers(*)").eq("league_group_id", leagueGroupId),
     db.from("fantasycalc_values").select("*"),
-    db.from("resolved_draft_picks").select("season, round, original_roster_id, resolved_player_id"),
+    db
+      .from("resolved_draft_picks")
+      .select("season, round, original_roster_id, resolved_player_id")
+      .eq("league_group_id", leagueGroupId),
     db.from("players").select("player_id, full_name, position"),
   ]);
   if (txErr) throw txErr;
@@ -223,8 +231,8 @@ export interface TradeLeaderboardRow {
   avgValue: number;
 }
 
-export async function getTradeLeaderboard(): Promise<TradeLeaderboardRow[]> {
-  const trades = await getTrades();
+export async function getTradeLeaderboard(leagueGroupId: string): Promise<TradeLeaderboardRow[]> {
+  const trades = await getTrades(leagueGroupId);
   const byManager = new Map<string, TradeLeaderboardRow>();
 
   for (const trade of trades) {

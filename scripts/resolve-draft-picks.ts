@@ -24,7 +24,7 @@ const db = createAdminClient();
 async function main() {
   const { data: leagues, error: lErr } = await db
     .from("leagues")
-    .select("league_id, season, status, total_rosters")
+    .select("league_id, league_group_id, season, status, total_rosters")
     .order("season");
   if (lErr) throw lErr;
 
@@ -36,13 +36,14 @@ async function main() {
 
   const { data: tradedPicks, error: tpErr } = await db
     .from("traded_picks")
-    .select("league_id, season, round, original_roster_id, new_owner_roster_id");
+    .select("league_id, league_group_id, season, round, original_roster_id, new_owner_roster_id");
   if (tpErr) throw tpErr;
 
   let resolved = 0;
   let skippedNotDrafted = 0;
   let skippedMismatch = 0;
   const rows: {
+    league_group_id: string;
     season: string;
     round: number;
     original_roster_id: number;
@@ -59,7 +60,9 @@ async function main() {
     const drafts = await sleeper.getDrafts(league.league_id);
     const draft = drafts.find((d) => d.season === league.season);
     if (!draft || draft.status !== "complete") {
-      skippedNotDrafted += (tradedPicks ?? []).filter((tp) => tp.season === league.season).length;
+      skippedNotDrafted += (tradedPicks ?? []).filter(
+        (tp) => tp.season === league.season && tp.league_group_id === league.league_group_id
+      ).length;
       continue;
     }
 
@@ -80,7 +83,9 @@ async function main() {
     const picks = await sleeper.getDraftPicks(draft.draft_id);
     const pickByNo = new Map(picks.map((p) => [p.pick_no, p]));
 
-    const thisSeasonTraded = (tradedPicks ?? []).filter((tp) => tp.season === league.season);
+    const thisSeasonTraded = (tradedPicks ?? []).filter(
+      (tp) => tp.season === league.season && tp.league_group_id === league.league_group_id
+    );
     for (const tp of thisSeasonTraded) {
       const slot = slotByOriginalRoster.get(tp.original_roster_id);
       if (slot == null) continue;
@@ -102,6 +107,7 @@ async function main() {
       }
 
       rows.push({
+        league_group_id: league.league_group_id,
         season: tp.season,
         round: tp.round,
         original_roster_id: tp.original_roster_id,
@@ -115,11 +121,13 @@ async function main() {
 
   // Dedupe (multiple traded_picks rows across league_id snapshots can refer
   // to the same logical pick); last one wins, they should agree anyway.
-  const uniqueRows = new Map(rows.map((r) => [`${r.season}:${r.round}:${r.original_roster_id}`, r]));
+  const uniqueRows = new Map(
+    rows.map((r) => [`${r.league_group_id}:${r.season}:${r.round}:${r.original_roster_id}`, r])
+  );
 
   const { error: upErr } = await db
     .from("resolved_draft_picks")
-    .upsert(Array.from(uniqueRows.values()), { onConflict: "season,round,original_roster_id" });
+    .upsert(Array.from(uniqueRows.values()), { onConflict: "league_group_id,season,round,original_roster_id" });
   if (upErr) throw new Error(`upsert resolved_draft_picks failed: ${upErr.message}`);
 
   console.log(

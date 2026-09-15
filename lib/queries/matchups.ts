@@ -1,7 +1,7 @@
 import { getAllGames } from "@/lib/queries/games";
 
-export async function getSeasonMatchups(season: string) {
-  const games = await getAllGames();
+export async function getSeasonMatchups(leagueGroupId: string, season: string) {
+  const games = await getAllGames(leagueGroupId);
   const seasonGames = games.filter((g) => g.season === season);
 
   const seen = new Set<string>();
@@ -24,8 +24,12 @@ export interface HeadToHeadSummary {
   games: { season: string; week: number; weekLabel: string; a_points: number; b_points: number }[];
 }
 
-export async function getHeadToHead(managerA: string, managerB: string): Promise<HeadToHeadSummary | null> {
-  const games = await getAllGames();
+export async function getHeadToHead(
+  leagueGroupId: string,
+  managerA: string,
+  managerB: string
+): Promise<HeadToHeadSummary | null> {
+  const games = await getAllGames(leagueGroupId);
   const matches = games.filter((g) => g.manager_id === managerA && g.opp_manager_id === managerB);
   if (matches.length === 0) return null;
 
@@ -42,8 +46,8 @@ export async function getHeadToHead(managerA: string, managerB: string): Promise
   return { manager_a: managerA, manager_b: managerB, a_wins: aWins, b_wins: bWins, ties, games: gameList };
 }
 
-export async function listManagersWithGames() {
-  const games = await getAllGames();
+export async function listManagersWithGames(leagueGroupId: string) {
+  const games = await getAllGames(leagueGroupId);
   const map = new Map<string, string>();
   for (const g of games) {
     if (g.manager_id && g.manager_name) map.set(g.manager_id, g.manager_name);

@@ -24,12 +24,19 @@ async function upsert(table: string, rows: unknown[], onConflict: string) {
 }
 
 async function main() {
-  const currentLeagueId = process.env.SLEEPER_LEAGUE_ID;
-  if (!currentLeagueId) throw new Error("SLEEPER_LEAGUE_ID not set");
+  // CLI arg overrides the env var, so an on-demand ingest for a specific
+  // (possibly brand-new) league can be triggered without touching the
+  // default used by the unattended weekly cron run.
+  const currentLeagueId = process.argv[2] || process.env.SLEEPER_LEAGUE_ID;
+  if (!currentLeagueId) throw new Error("SLEEPER_LEAGUE_ID not set and no league id passed as an argument");
 
   console.log("Resolving dynasty league chain...");
   const chain = await resolveLeagueChain(currentLeagueId); // oldest -> newest
   console.log(chain.map((l) => `${l.season}:${l.league_id}`).join(" -> "));
+
+  // The oldest league in the chain is this dynasty's stable identity across
+  // seasons (a league_id itself is reissued every season by Sleeper).
+  const leagueGroupId = chain[0].league_id;
 
   const nflState = await sleeper.getNflState();
   console.log(`current NFL state: season ${nflState.season}, week ${nflState.week}`);
@@ -60,6 +67,7 @@ async function main() {
   leagueRows.push(
     ...chain.map((l: SleeperLeague, i: number) => ({
       league_id: l.league_id,
+      league_group_id: leagueGroupId,
       season: l.season,
       name: l.name,
       status: l.status,
@@ -86,6 +94,7 @@ async function main() {
     for (const r of rosters) {
       teamSeasonRows.push({
         league_id: league.league_id,
+        league_group_id: leagueGroupId,
         roster_id: r.roster_id,
         manager_id: r.owner_id,
         team_name: r.owner_id ? teamNameByUser.get(r.owner_id) ?? null : null,
@@ -111,7 +120,13 @@ async function main() {
         if (starters.has(pid)) slot = "starter";
         else if (reserve.has(pid)) slot = "reserve";
         else if (taxi.has(pid)) slot = "taxi";
-        rosterPlayerRows.push({ league_id: league.league_id, roster_id: r.roster_id, player_id: pid, slot });
+        rosterPlayerRows.push({
+          league_id: league.league_id,
+          league_group_id: leagueGroupId,
+          roster_id: r.roster_id,
+          player_id: pid,
+          slot,
+        });
       }
     }
 
@@ -125,6 +140,7 @@ async function main() {
         for (const m of matches) {
           playoffResultRows.push({
             league_id: league.league_id,
+            league_group_id: leagueGroupId,
             bracket,
             round: m.r,
             match_id: m.m,
@@ -155,6 +171,7 @@ async function main() {
       draftRows.push({
         draft_id: d.draft_id,
         league_id: league.league_id,
+        league_group_id: leagueGroupId,
         season: d.season,
         type: d.type,
         rounds: d.settings?.rounds ?? null,
@@ -180,6 +197,7 @@ async function main() {
     for (const tp of tradedPicks) {
       tradedPickRows.push({
         league_id: league.league_id,
+        league_group_id: leagueGroupId,
         season: tp.season,
         round: tp.round,
         original_roster_id: tp.roster_id,
@@ -213,6 +231,7 @@ async function main() {
       for (const m of matchups) {
         matchupRows.push({
           league_id: league.league_id,
+          league_group_id: leagueGroupId,
           week,
           roster_id: m.roster_id,
           matchup_id: m.matchup_id,
@@ -225,6 +244,7 @@ async function main() {
           referencedPlayerIds.add(pid);
           matchupPlayerRows.push({
             league_id: league.league_id,
+            league_group_id: leagueGroupId,
             week,
             roster_id: m.roster_id,
             player_id: pid,
@@ -245,6 +265,7 @@ async function main() {
         transactionRows.push({
           transaction_id: tx.transaction_id,
           league_id: league.league_id,
+          league_group_id: leagueGroupId,
           week: tx.leg,
           type: tx.type,
           status: tx.status,

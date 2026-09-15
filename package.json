@@ -10,6 +10,7 @@
     "test:sleeper": "tsx scripts/test-sleeper.ts",
     "migrate": "tsx scripts/migrate.ts",
     "ingest": "tsx scripts/ingest.ts",
+    "list:leagues": "tsx scripts/list-known-leagues.ts",
     "sync:fantasycalc": "tsx scripts/sync-fantasycalc.ts",
     "resolve:picks": "tsx scripts/resolve-draft-picks.ts",
     "backfill:snap-participation": "tsx scripts/backfill-snap-participation.ts"

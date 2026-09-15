@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listPlayers } from "@/lib/queries/players";
+import { resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { PageHeader } from "@/components/page-header";
 import { PlayerFilters } from "@/components/player-filters";
 import { EmptyState } from "@/components/empty-state";
@@ -12,12 +13,16 @@ export const revalidate = 300;
 export const metadata = { title: "Players" };
 
 export default async function PlayersPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ leagueId: string }>;
   searchParams: Promise<{ q?: string; position?: string }>;
 }) {
+  const { leagueId } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
   const { q = "", position = "ALL" } = await searchParams;
-  const players = await listPlayers({ search: q, position });
+  const players = await listPlayers(leagueGroupId, { search: q, position });
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,7 +53,7 @@ export default async function PlayersPage({
                 <TableRow key={p.player_id} className="cursor-pointer">
                   <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
                   <TableCell>
-                    <Link href={`/players/${p.player_id}`} className="font-medium hover:text-primary">
+                    <Link href={`/${leagueId}/players/${p.player_id}`} className="font-medium hover:text-primary">
                       {p.full_name ?? p.player_id}
                     </Link>
                   </TableCell>

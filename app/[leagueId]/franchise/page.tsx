@@ -7,6 +7,7 @@ import {
   getFranchiseGames,
   getFranchiseHeadToHead,
 } from "@/lib/queries/franchise";
+import { resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { TeamBadge } from "@/components/team-badge";
@@ -24,30 +25,33 @@ export const revalidate = 300;
 export const metadata = { title: "Franchise" };
 
 export default async function FranchisePage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ leagueId: string }>;
   searchParams: Promise<{ manager?: string }>;
 }) {
-  const defaultUserId = process.env.SLEEPER_USER_ID;
-  if (!defaultUserId) throw new Error("SLEEPER_USER_ID not configured");
+  const { leagueId } = await params;
+  const leagueGroupId = (await resolveLeagueGroupId(leagueId))!;
 
   const [{ manager: managerParam }, allManagers] = await Promise.all([
     searchParams,
-    getAllFranchiseManagers(),
+    getAllFranchiseManagers(leagueGroupId),
   ]);
+  if (allManagers.length === 0) notFound();
 
   const selectedId =
-    managerParam && allManagers.some((m) => m.user_id === managerParam) ? managerParam : defaultUserId;
+    managerParam && allManagers.some((m) => m.user_id === managerParam) ? managerParam : allManagers[0].user_id;
 
   const manager = await getManagerByUserId(selectedId);
   if (!manager) notFound();
 
   const [career, seasons, bestPlayers, games, headToHead] = await Promise.all([
-    getFranchiseCareerStats(manager.user_id),
-    getFranchiseSeasons(manager.user_id),
-    getFranchiseBestPlayers(manager.user_id),
-    getFranchiseGames(manager.user_id),
-    getFranchiseHeadToHead(manager.user_id),
+    getFranchiseCareerStats(leagueGroupId, manager.user_id),
+    getFranchiseSeasons(leagueGroupId, manager.user_id),
+    getFranchiseBestPlayers(leagueGroupId, manager.user_id),
+    getFranchiseGames(leagueGroupId, manager.user_id),
+    getFranchiseHeadToHead(leagueGroupId, manager.user_id),
   ]);
 
   const decided = games.filter((g) => g.result);

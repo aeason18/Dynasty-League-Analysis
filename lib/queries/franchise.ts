@@ -25,11 +25,12 @@ export async function getManagerByUserId(userId: string): Promise<Manager | null
   return data as Manager | null;
 }
 
-export async function getAllFranchiseManagers(): Promise<Manager[]> {
+export async function getAllFranchiseManagers(leagueGroupId: string): Promise<Manager[]> {
   const db = createReadClient();
   const { data, error } = await db
     .from("team_seasons")
     .select("manager:managers(*)")
+    .eq("league_group_id", leagueGroupId)
     .not("manager_id", "is", null);
   if (error) throw error;
 
@@ -40,22 +41,27 @@ export async function getAllFranchiseManagers(): Promise<Manager[]> {
   return Array.from(seen.values()).sort((a, b) => a.display_name.localeCompare(b.display_name));
 }
 
-export async function getFranchiseCareerStats(managerId: string): Promise<ManagerCareerStats | null> {
+export async function getFranchiseCareerStats(
+  leagueGroupId: string,
+  managerId: string
+): Promise<ManagerCareerStats | null> {
   const db = createReadClient();
   const { data, error } = await db
     .from("manager_career_stats")
     .select("*")
+    .eq("league_group_id", leagueGroupId)
     .eq("manager_id", managerId)
     .maybeSingle();
   if (error) throw error;
   return data as ManagerCareerStats | null;
 }
 
-export async function getFranchiseSeasons(managerId: string): Promise<FranchiseSeason[]> {
+export async function getFranchiseSeasons(leagueGroupId: string, managerId: string): Promise<FranchiseSeason[]> {
   const db = createReadClient();
   const { data, error } = await db
     .from("team_seasons")
     .select("*, league:leagues!team_seasons_league_id_fkey(season, name)")
+    .eq("league_group_id", leagueGroupId)
     .eq("manager_id", managerId);
   if (error) throw error;
   return ((data ?? []) as unknown as (TeamSeason & { league: { season: string; name: string } })[])
@@ -63,11 +69,16 @@ export async function getFranchiseSeasons(managerId: string): Promise<FranchiseS
     .sort((a, b) => a.season.localeCompare(b.season));
 }
 
-export async function getFranchiseBestPlayers(managerId: string, limit = 50): Promise<PlayerTeamPoints[]> {
+export async function getFranchiseBestPlayers(
+  leagueGroupId: string,
+  managerId: string,
+  limit = 50
+): Promise<PlayerTeamPoints[]> {
   const db = createReadClient();
   const { data, error } = await db
     .from("player_team_points")
     .select("*")
+    .eq("league_group_id", leagueGroupId)
     .eq("manager_id", managerId)
     .order("total_points", { ascending: false })
     .limit(limit);
@@ -75,13 +86,13 @@ export async function getFranchiseBestPlayers(managerId: string, limit = 50): Pr
   return (data ?? []) as PlayerTeamPoints[];
 }
 
-export async function getFranchiseGames(managerId: string) {
-  const games = await getAllGames();
+export async function getFranchiseGames(leagueGroupId: string, managerId: string) {
+  const games = await getAllGames(leagueGroupId);
   return games.filter((g) => g.manager_id === managerId);
 }
 
-export async function getFranchiseHeadToHead(managerId: string): Promise<HeadToHeadRow[]> {
-  const games = (await getAllGames()).filter((g) => g.manager_id === managerId && g.opp_manager_id);
+export async function getFranchiseHeadToHead(leagueGroupId: string, managerId: string): Promise<HeadToHeadRow[]> {
+  const games = (await getAllGames(leagueGroupId)).filter((g) => g.manager_id === managerId && g.opp_manager_id);
   const byOpponent = new Map<string, HeadToHeadRow>();
 
   for (const g of games) {

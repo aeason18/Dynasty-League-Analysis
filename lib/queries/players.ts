@@ -15,9 +15,16 @@ export interface PlayerLeagueTotal {
   ppg: number;
 }
 
-export async function listPlayers(opts: { search?: string; position?: string } = {}): Promise<PlayerLeagueTotal[]> {
+export async function listPlayers(
+  leagueGroupId: string,
+  opts: { search?: string; position?: string } = {}
+): Promise<PlayerLeagueTotal[]> {
   const db = createReadClient();
-  let query = db.from("player_league_totals").select("*").order("total_points", { ascending: false });
+  let query = db
+    .from("player_league_totals")
+    .select("*")
+    .eq("league_group_id", leagueGroupId)
+    .order("total_points", { ascending: false });
 
   if (opts.search) {
     query = query.ilike("full_name", `%${opts.search}%`);
@@ -38,11 +45,12 @@ export async function getPlayer(playerId: string): Promise<Player | null> {
   return data as Player | null;
 }
 
-export async function getPlayerTeamSplits(playerId: string): Promise<PlayerTeamPoints[]> {
+export async function getPlayerTeamSplits(leagueGroupId: string, playerId: string): Promise<PlayerTeamPoints[]> {
   const db = createReadClient();
   const { data, error } = await db
     .from("player_team_points")
     .select("*")
+    .eq("league_group_id", leagueGroupId)
     .eq("player_id", playerId)
     .order("total_points", { ascending: false });
   if (error) throw error;
@@ -59,13 +67,13 @@ export interface PlayerGameLog {
   team_name: string | null;
 }
 
-export async function getPlayerGameLog(playerId: string): Promise<PlayerGameLog[]> {
+export async function getPlayerGameLog(leagueGroupId: string, playerId: string): Promise<PlayerGameLog[]> {
   const db = createReadClient();
   const [{ data: mp, error: mpErr }, { data: leagues, error: lErr }, { data: teamSeasons, error: tErr }] =
     await Promise.all([
-      db.from("matchup_players").select("*").eq("player_id", playerId),
-      db.from("leagues").select("league_id, season"),
-      db.from("team_seasons").select("*, manager:managers(display_name)"),
+      db.from("matchup_players").select("*").eq("player_id", playerId).eq("league_group_id", leagueGroupId),
+      db.from("leagues").select("league_id, season").eq("league_group_id", leagueGroupId),
+      db.from("team_seasons").select("*, manager:managers(display_name)").eq("league_group_id", leagueGroupId),
     ]);
   if (mpErr) throw mpErr;
   if (lErr) throw lErr;
