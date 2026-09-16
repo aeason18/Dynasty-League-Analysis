@@ -13,6 +13,7 @@ import { useSeasonBadge } from "@/components/season-context";
 // dashboard at /<leagueId>).
 const NAV_ITEMS = [
   { path: "", label: "Dashboard" },
+  { path: "rankings", label: "Rankings" },
   { path: "franchise", label: "Franchise" },
   { path: "players", label: "Players" },
   { path: "matchups", label: "Matchups" },
