@@ -15,7 +15,7 @@ export function StatCard({
   value: string;
   sublabel?: string;
   icon?: LucideIcon;
-  accent?: "primary" | "accent" | "neutral";
+  accent?: "primary" | "accent" | "pop" | "neutral";
   /** Corner-bracket accent — reserve for the one standout card per grid. */
   framed?: boolean;
   className?: string;
@@ -42,6 +42,7 @@ export function StatCard({
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
               accent === "primary" && "bg-primary/15 text-primary",
               accent === "accent" && "bg-accent/20 text-accent",
+              accent === "pop" && "bg-pop/15 text-pop",
               accent === "neutral" && "bg-secondary/40 text-muted-foreground"
             )}
           >

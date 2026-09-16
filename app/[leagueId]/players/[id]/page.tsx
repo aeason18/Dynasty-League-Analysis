@@ -130,7 +130,7 @@ export default async function PlayerDetailPage({
           value={fmtPoints(projection.predicted_next_season_ppg)}
           sublabel="Live prediction from the dynasty-ppg-api model — illustrative, not a guarantee"
           icon={Sparkles}
-          accent="accent"
+          accent="pop"
           className="lg:max-w-xs"
         />
       )}

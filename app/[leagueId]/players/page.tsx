@@ -51,7 +51,12 @@ export default async function PlayersPage({
             <TableBody>
               {players.map((p, i) => (
                 <TableRow key={p.player_id} className="cursor-pointer">
-                  <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      {i === 0 && <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />}
+                      {i + 1}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <Link href={`/${leagueId}/players/${p.player_id}`} className="font-medium hover:text-primary">
                       {p.full_name ?? p.player_id}

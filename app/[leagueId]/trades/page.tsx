@@ -89,7 +89,12 @@ export default async function TradesPage({
               <TableBody>
                 {leaderboard.map((row, i) => (
                   <TableRow key={row.manager_id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{i + 1}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        {i === 0 && <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />}
+                        {i + 1}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <TeamBadge name={row.manager_name} avatar={row.avatar} size="sm" />
                     </TableCell>

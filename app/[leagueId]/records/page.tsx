@@ -152,7 +152,10 @@ function GameRecordRow({
   return (
     <div className="flex items-center justify-between gap-3 py-2.5">
       <div className="flex items-center gap-3 min-w-0">
-        <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">{rank}</span>
+        <span className="flex min-w-4 shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
+          {rank === 1 && <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />}
+          {rank}
+        </span>
         <TeamBadge
           name={game.team_name ?? game.manager_name ?? "Unknown"}
           subtitle={
@@ -173,7 +176,10 @@ function PlayerRecordRow({ rank, performance }: { rank: number; performance: Pla
   return (
     <div className="flex items-center justify-between gap-3 py-2.5">
       <div className="flex items-center gap-3 min-w-0">
-        <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">{rank}</span>
+        <span className="flex min-w-4 shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
+          {rank === 1 && <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />}
+          {rank}
+        </span>
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium text-foreground">
             {performance.player_name}
@@ -193,7 +199,10 @@ function StreakRow({ rank, streak }: { rank: number; streak: StreakRecord }) {
   return (
     <div className="flex items-center justify-between gap-3 py-2.5">
       <div className="flex items-center gap-3 min-w-0">
-        <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">{rank}</span>
+        <span className="flex min-w-4 shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
+          {rank === 1 && <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />}
+          {rank}
+        </span>
         <TeamBadge
           name={streak.manager_name}
           subtitle={`${streak.start_season} Wk ${streak.start_week} – ${streak.end_season} Wk ${streak.end_week}`}
