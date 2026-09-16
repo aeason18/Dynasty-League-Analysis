@@ -70,7 +70,7 @@ export function SiteHeader() {
           href="/"
           className="flex items-center px-6 font-heading text-lg font-black uppercase tracking-tight text-foreground"
         >
-          Fantasy<span className="text-primary">://</span>Archive
+          Dynasty<span className="text-primary">://</span>Archive
         </Link>
 
         {leagueId && (

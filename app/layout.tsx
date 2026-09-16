@@ -25,8 +25,8 @@ const martianMono = Martian_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Fantasy Archive",
-    template: "%s · Fantasy Archive",
+    default: "Dynasty Archive",
+    template: "%s · Dynasty Archive",
   },
   description: "Your league. Your history. Your analytics.",
 };
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </SeasonProvider>
           <footer className="border-t border-border/60 py-6">
             <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
-              <span>Fantasy Archive — built on real Sleeper data.</span>
+              <span>Dynasty Archive — built on real Sleeper data.</span>
               <span>Not affiliated with Sleeper.</span>
             </div>
           </footer>
