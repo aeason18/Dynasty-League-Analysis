@@ -220,36 +220,38 @@ export default async function DashboardPage({
 
           {standings.length > 0 ? (
             <>
-              <div className="relative z-10 mt-[22px]">
-                <div className="grid grid-cols-[24px_1fr_54px_54px_54px] gap-x-2 border-b border-foreground/[0.16] px-1.5 py-3 font-mono text-[11px] tracking-[0.1em] text-muted-foreground sm:grid-cols-[40px_1fr_92px_92px_92px] sm:gap-x-0">
-                  <div>#</div>
-                  <div>TEAM</div>
-                  <div className="text-right">W-L-T</div>
-                  <div className="text-right">PF</div>
-                  <div className="text-right">PA</div>
-                </div>
-                {standings.map((row, i) => (
-                  <div
-                    key={`${row.league_id}-${row.roster_id}`}
-                    className="grid grid-cols-[24px_1fr_54px_54px_54px] items-center gap-x-2 border-b border-foreground/10 px-1.5 py-3.5 sm:grid-cols-[40px_1fr_92px_92px_92px] sm:gap-x-0"
-                  >
-                    <div className="flex items-center gap-1.5 font-mono text-sm text-primary">
-                      {i === 0 && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pop" aria-hidden />}
-                      {row.rank}
-                    </div>
-                    <div className="text-sm font-medium">
-                      {row.team_name ?? row.manager?.display_name ?? `Team ${row.roster_id}`}
-                    </div>
-                    <div className="text-right font-mono text-[13px] tabular-nums">
-                      {row.wins}-{row.losses}
-                      {row.ties ? `-${row.ties}` : ""}
-                    </div>
-                    <div className="text-right font-mono text-[13px] tabular-nums">{fmtPoints(Number(row.fpts_for))}</div>
-                    <div className="text-right font-mono text-[13px] tabular-nums text-muted-foreground">
-                      {fmtPoints(Number(row.fpts_against))}
-                    </div>
+              <div className="relative z-10 mt-[22px] overflow-x-auto">
+                <div className="min-w-[480px]">
+                  <div className="grid grid-cols-[40px_1fr_92px_92px_92px] border-b border-foreground/[0.16] px-1.5 py-3 font-mono text-[11px] tracking-[0.1em] text-muted-foreground">
+                    <div>#</div>
+                    <div>TEAM</div>
+                    <div className="text-right">W-L-T</div>
+                    <div className="text-right">PF</div>
+                    <div className="text-right">PA</div>
                   </div>
-                ))}
+                  {standings.map((row, i) => (
+                    <div
+                      key={`${row.league_id}-${row.roster_id}`}
+                      className="grid grid-cols-[40px_1fr_92px_92px_92px] items-center border-b border-foreground/10 px-1.5 py-3.5"
+                    >
+                      <div className="flex items-center gap-1.5 font-mono text-sm text-primary">
+                        {i === 0 && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pop" aria-hidden />}
+                        {row.rank}
+                      </div>
+                      <div className="text-sm font-medium">
+                        {row.team_name ?? row.manager?.display_name ?? `Team ${row.roster_id}`}
+                      </div>
+                      <div className="text-right font-mono text-[13px] tabular-nums">
+                        {row.wins}-{row.losses}
+                        {row.ties ? `-${row.ties}` : ""}
+                      </div>
+                      <div className="text-right font-mono text-[13px] tabular-nums">{fmtPoints(Number(row.fpts_for))}</div>
+                      <div className="text-right font-mono text-[13px] tabular-nums text-muted-foreground">
+                        {fmtPoints(Number(row.fpts_against))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               {!seasonHasGames && (
                 <p className="relative z-10 mt-3 text-xs text-muted-foreground">

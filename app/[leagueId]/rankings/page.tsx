@@ -42,7 +42,7 @@ export default async function RankingsPage({ params }: { params: Promise<{ leagu
                   <TableHead className="w-10">#</TableHead>
                   <TableHead>Team</TableHead>
                   <TableHead>Profile</TableHead>
-                  <TableHead className="text-right">Star</TableHead>
+                  <TableHead className="text-right">Star Power</TableHead>
                   <TableHead className="text-right">Starters</TableHead>
                   <TableHead className="text-right">Depth</TableHead>
                   <TableHead className="text-right">Picks</TableHead>
@@ -92,7 +92,7 @@ export default async function RankingsPage({ params }: { params: Promise<{ leagu
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Star = top 3-4 players by dynasty market value, heavily weighted (~45%). Starters = the players filling
+            Star Power = top 3-4 players by dynasty market value, heavily weighted (~45%). Starters = the players filling
             the starting lineup (~28%). Depth = the rest of the bench and taxi squad, with diminishing weight
             further down the roster (~15%). Picks = currently owned future draft capital, valued the same way
             (~12%). Every column is scored relative to the rest of the league, so a 94.7 means elite for this
