@@ -16,7 +16,7 @@ export function WinPctChart({ data }: { data: { season: string; win_pct: number;
         <YAxis
           tickLine={false}
           axisLine={false}
-          width={40}
+          width={48}
           domain={[0, 1]}
           tickFormatter={(v) => `${Math.round(v * 100)}%`}
           tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
