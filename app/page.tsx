@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { getCurrentLeague, resolveLeagueGroupId } from "@/lib/queries/leagues";
 import { OnboardingForm } from "@/components/onboarding-form";
 
@@ -19,13 +18,10 @@ export default async function OnboardingPage() {
   const example = await getExampleLeague();
 
   return (
-    <div className="flex min-h-[75vh] flex-col items-center justify-center gap-10 py-16 text-center">
+    <div className="mx-auto flex min-h-[75vh] w-full max-w-7xl flex-col items-center justify-center gap-10 px-4 py-16 text-center sm:px-6 lg:px-8">
       <div className="flex flex-col items-center gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-          <Trophy className="h-7 w-7" strokeWidth={2.25} />
-        </span>
-        <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Fantasy League Archive
+        <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-foreground sm:text-4xl">
+          Fantasy<span className="text-primary">://</span>Archive
         </h1>
         <p className="max-w-md text-sm text-muted-foreground sm:text-base">
           Your league. Your history. Your analytics. Enter your Sleeper league ID to pull up every season, record,

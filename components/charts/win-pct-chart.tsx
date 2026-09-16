@@ -22,7 +22,7 @@ export function WinPctChart({ data }: { data: { season: string; win_pct: number;
           tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
         />
         <Tooltip
-          cursor={{ fill: "rgba(255,255,255,0.05)" }}
+          cursor={{ fill: "var(--color-muted)" }}
           contentStyle={{
             background: "var(--color-popover)",
             border: "1px solid var(--color-border)",

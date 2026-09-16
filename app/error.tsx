@@ -10,19 +10,21 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 px-6 py-20 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-        <AlertTriangle className="h-6 w-6" />
-      </span>
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-semibold text-foreground">Something went wrong loading this data</p>
-        <p className="max-w-md text-sm text-muted-foreground">
-          {error.message || "An unexpected error occurred while querying the archive."}
-        </p>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 px-6 py-20 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+          <AlertTriangle className="h-6 w-6" />
+        </span>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold text-foreground">Something went wrong loading this data</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {error.message || "An unexpected error occurred while querying the archive."}
+          </p>
+        </div>
+        <Button onClick={reset} variant="outline" size="sm">
+          Try again
+        </Button>
       </div>
-      <Button onClick={reset} variant="outline" size="sm">
-        Try again
-      </Button>
     </div>
   );
 }

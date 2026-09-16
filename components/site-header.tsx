@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, Trophy } from "lucide-react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useSeasonBadge } from "@/components/season-context";
 
 // Sub-paths relative to the current league segment ("" = the league's own
 // dashboard at /<leagueId>).
@@ -22,7 +23,7 @@ const NAV_ITEMS = [
 function NavLinks({ leagueId, onNavigate, className }: { leagueId: string; onNavigate?: () => void; className?: string }) {
   const pathname = usePathname();
   return (
-    <nav className={cn("flex items-center gap-1", className)}>
+    <nav className={cn("flex items-stretch gap-0", className)}>
       {NAV_ITEMS.map((item) => {
         const href = item.path ? `/${leagueId}/${item.path}` : `/${leagueId}`;
         const active = item.path ? pathname.startsWith(href) : pathname === href;
@@ -32,12 +33,19 @@ function NavLinks({ leagueId, onNavigate, className }: { leagueId: string; onNav
             href={href}
             onClick={onNavigate}
             className={cn(
-              "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              "group flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-widest transition-colors",
+              active ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
           >
+            <span
+              aria-hidden
+              className={cn(
+                "h-1.5 w-1.5 shrink-0",
+                active
+                  ? "bg-primary"
+                  : "border border-muted-foreground/60 bg-transparent group-hover:border-foreground/60"
+              )}
+            />
             {item.label}
           </Link>
         );
@@ -49,28 +57,37 @@ function NavLinks({ leagueId, onNavigate, className }: { leagueId: string; onNav
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { season } = useSeasonBadge();
   // The onboarding root ("/") has no league in scope yet, so it gets a
   // brand-mark-only header with no nav — every other route is nested under
   // /<leagueId>/..., where the first path segment is that league's id.
   const leagueId = pathname.split("/").filter(Boolean)[0] ?? null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <Trophy className="h-4.5 w-4.5" strokeWidth={2.25} />
-          </span>
-          <span className="font-heading text-sm font-semibold tracking-tight text-foreground">
-            Fantasy League Archive
-          </span>
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
+      <div className="flex items-stretch justify-between">
+        <Link
+          href="/"
+          className="flex items-center px-6 font-heading text-lg font-black uppercase tracking-tight text-foreground"
+        >
+          Fantasy<span className="text-primary">://</span>Archive
         </Link>
 
         {leagueId && (
           <>
-            <NavLinks leagueId={leagueId} className="hidden md:flex" />
+            <div className="hidden items-stretch md:flex">
+              <NavLinks leagueId={leagueId} />
+              {season && (
+                <>
+                  <div aria-hidden className="w-px self-stretch bg-border" />
+                  <div className="flex items-center bg-primary px-5 font-mono text-xs font-bold uppercase tracking-widest text-primary-foreground">
+                    {season} Season
+                  </div>
+                </>
+              )}
+            </div>
 
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-2 px-4 md:hidden">
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger
                   render={

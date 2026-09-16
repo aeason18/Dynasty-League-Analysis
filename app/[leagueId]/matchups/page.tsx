@@ -57,7 +57,7 @@ export default async function MatchupsPage({
   const nameB = managers.find((m) => m.id === resolvedB)?.name;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <PageHeader
         eyebrow="Matchups"
         title="Season Matchups"

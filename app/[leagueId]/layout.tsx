@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { resolveLeagueGroupId } from "@/lib/queries/leagues";
+import { getCurrentLeague, resolveLeagueGroupId } from "@/lib/queries/leagues";
+import { SeasonBadgeSetter } from "@/components/season-badge-setter";
 
 export default async function LeagueLayout({
   children,
@@ -12,5 +13,12 @@ export default async function LeagueLayout({
   const leagueGroupId = await resolveLeagueGroupId(leagueId);
   if (!leagueGroupId) notFound();
 
-  return children;
+  const current = await getCurrentLeague(leagueGroupId);
+
+  return (
+    <>
+      <SeasonBadgeSetter season={current?.season ?? null} />
+      {children}
+    </>
+  );
 }

@@ -75,7 +75,7 @@ export default async function FranchisePage({
     .sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0))[0];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <PageHeader
         eyebrow="Franchise"
         title={seasons.at(-1)?.team_name ?? manager.display_name}
@@ -89,6 +89,7 @@ export default async function FranchisePage({
           value={career ? fmtRecord(career.wins, career.losses, career.ties) : "0-0"}
           sublabel={career ? `${fmtPct(career.wins, career.losses, career.ties)} win pct` : undefined}
           icon={Trophy}
+          framed
         />
         <StatCard label="Championships" value={String(championships)} icon={Crown} accent="accent" />
         <StatCard
