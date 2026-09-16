@@ -1,0 +1,30 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
+/**
+ * Generic route-level loading fallback -- shared by app/loading.tsx and
+ * app/[leagueId]/loading.tsx so every page under the league (dashboard,
+ * franchise, players, matchups, records, trades, rankings) gets an instant
+ * "your click landed" skeleton instead of a blank wait, without needing a
+ * bespoke loading.tsx per route.
+ */
+export function PageSkeleton() {
+  return (
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-8 w-72" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-2xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Skeleton className="h-72 rounded-2xl lg:col-span-2" />
+        <Skeleton className="h-72 rounded-2xl" />
+      </div>
+      <Skeleton className="h-80 rounded-2xl" />
+    </div>
+  );
+}
