@@ -79,6 +79,50 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
+/** Flex-type roster slots and the base positions each one can absorb. */
+const FLEX_ELIGIBLE: Record<string, string[]> = {
+  FLEX: ["RB", "WR", "TE"],
+  WRRB_FLEX: ["RB", "WR"],
+  REC_FLEX: ["WR", "TE"],
+  SUPER_FLEX: ["QB", "RB", "WR", "TE"],
+};
+
+/**
+ * Fills the league's required starting slots (from `roster_positions`, minus
+ * bench spots and defense) with a roster's highest-value eligible player at
+ * each slot -- an idealized optimal lineup, not whatever the manager
+ * happened to start that week. Single-position slots (QB/RB/WR/TE/K/...) are
+ * filled first, then flex-type slots (narrowest eligibility first) get the
+ * best remaining player among their allowed positions. Returns the list of
+ * players claimed, unsorted.
+ */
+function buildOptimalLineup<T extends { player_id: string; position: string | null; value: number }>(
+  rosterPlayers: T[],
+  rosterPositions: string[]
+): T[] {
+  const requiredSlots = rosterPositions.filter((s) => s !== "BN" && s !== "DEF");
+  const specificSlots = requiredSlots.filter((s) => !FLEX_ELIGIBLE[s]);
+  const flexSlots = requiredSlots
+    .filter((s) => FLEX_ELIGIBLE[s])
+    .sort((a, b) => FLEX_ELIGIBLE[a].length - FLEX_ELIGIBLE[b].length);
+
+  const available = rosterPlayers.slice().sort((a, b) => b.value - a.value);
+  const used = new Set<string>();
+  const lineup: T[] = [];
+
+  function claim(eligiblePositions: string[]) {
+    const player = available.find((p) => !used.has(p.player_id) && p.position && eligiblePositions.includes(p.position));
+    if (!player) return;
+    used.add(player.player_id);
+    lineup.push(player);
+  }
+
+  for (const slot of specificSlots) claim([slot]);
+  for (const slot of flexSlots) claim(FLEX_ELIGIBLE[slot]);
+
+  return lineup;
+}
+
 /**
  * Power rankings for the league's CURRENT roster snapshot only (not a
  * per-season historical view) -- weighted so a team's top-end talent
@@ -90,7 +134,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
 
   const { data: league, error: lErr } = await db
     .from("leagues")
-    .select("league_id, season")
+    .select("league_id, season, roster_positions")
     .eq("league_group_id", leagueGroupId)
     .eq("is_current", true)
     .maybeSingle();
@@ -106,7 +150,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     { data: draft, error: dErr },
   ] = await Promise.all([
     db.from("team_seasons").select("*, manager:managers(*)").eq("league_id", league.league_id),
-    db.from("roster_players").select("roster_id, player_id, slot").eq("league_id", league.league_id),
+    db.from("roster_players").select("roster_id, player_id").eq("league_id", league.league_id),
     db.from("players").select("player_id, full_name, position"),
     db.from("fantasycalc_values").select("sleeper_player_id, is_pick, pick_season, pick_round, value"),
     db.from("traded_picks").select("season, round, original_roster_id, new_owner_roster_id").eq("league_id", league.league_id),
@@ -178,10 +222,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     }
   }
 
-  interface RosterPlayer extends PowerRankingPlayer {
-    slot: string;
-  }
-  const playersByRoster = new Map<number, RosterPlayer[]>();
+  const playersByRoster = new Map<number, PowerRankingPlayer[]>();
   for (const rid of rosterIds) playersByRoster.set(rid, []);
   for (const rp of rosterPlayers ?? []) {
     const list = playersByRoster.get(rp.roster_id);
@@ -191,7 +232,6 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
       name: playerName.get(rp.player_id) ?? rp.player_id,
       position: playerPos.get(rp.player_id) ?? null,
       value: valueBySleeperId.get(rp.player_id) ?? 0,
-      slot: rp.slot,
     });
   }
 
@@ -207,16 +247,24 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     pickGroup: PowerRankingPick[];
   }
 
+  const rosterPositions = league.roster_positions ?? [];
+
   const raw: RawScore[] = rosterIds.map((rid) => {
     const all = (playersByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
     const picks = (picksByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
-    const starGroup = all.slice(0, 4);
+
+    // Star Power + Core together are the team's idealized starting lineup --
+    // the highest-value player available at every required slot, not
+    // whoever the manager happened to start that week. Star Power skims the
+    // top 3-4 off that lineup; Core is whatever's left of it. A slot's
+    // requirement is satisfied once any lineup player fills it, so a team
+    // with an elite TE in Star Power doesn't need a second one in Core.
+    const optimalLineup = buildOptimalLineup(all, rosterPositions).sort((a, b) => b.value - a.value);
+    const starGroup = optimalLineup.slice(0, 4);
     const starIds = new Set(starGroup.map((p) => p.player_id));
-    // Every tier is mutually exclusive -- a player in Star Power can't also
-    // show up in Core or Depth, otherwise the same value gets credited to a
-    // team more than once under a different label.
-    const coreGroup = all.filter((p) => p.slot === "starter" && !starIds.has(p.player_id));
-    const depthPlayers = all.filter((p) => p.slot !== "starter" && !starIds.has(p.player_id));
+    const coreGroup = optimalLineup.filter((p) => !starIds.has(p.player_id));
+    const lineupIds = new Set(optimalLineup.map((p) => p.player_id));
+    const depthPlayers = all.filter((p) => !lineupIds.has(p.player_id));
 
     return {
       roster_id: rid,
