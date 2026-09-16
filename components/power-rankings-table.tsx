@@ -60,10 +60,10 @@ function RankingDetail({ r }: { r: PowerRanking }) {
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wide text-foreground">Starters</span>
-            <span className="font-mono text-xs tabular-nums text-primary">{r.starterScore.toFixed(1)}</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-foreground">Core</span>
+            <span className="font-mono text-xs tabular-nums text-primary">{r.coreScore.toFixed(1)}</span>
           </div>
-          <PlayerList players={r.starterGroup} />
+          <PlayerList players={r.coreGroup} />
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between">
@@ -119,7 +119,7 @@ export function PowerRankingsTable({ rankings }: { rankings: PowerRanking[] }) {
               <TableHead>Team</TableHead>
               <TableHead>Profile</TableHead>
               <TableHead className="text-right">Star Power</TableHead>
-              <TableHead className="text-right">Starters</TableHead>
+              <TableHead className="text-right">Core</TableHead>
               <TableHead className="text-right">Depth</TableHead>
               <TableHead className="text-right">Picks</TableHead>
               <TableHead className="text-right">Overall</TableHead>
@@ -158,7 +158,7 @@ export function PowerRankingsTable({ rankings }: { rankings: PowerRanking[] }) {
                       {r.starScore.toFixed(1)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
-                      {r.starterScore.toFixed(1)}
+                      {r.coreScore.toFixed(1)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
                       {r.depthScore.toFixed(1)}

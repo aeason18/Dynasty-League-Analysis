@@ -25,14 +25,14 @@ export interface PowerRanking {
   avatar: string | null;
   overall: number;
   starScore: number;
-  starterScore: number;
+  coreScore: number;
   depthScore: number;
   picksScore: number;
   profile: RosterProfile;
   /** Every group sorted desc by value -- the full "why" behind each tier's
    * score, for the expandable breakdown in the UI. */
   starGroup: PowerRankingPlayer[];
-  starterGroup: PowerRankingPlayer[];
+  coreGroup: PowerRankingPlayer[];
   depthGroup: PowerRankingPlayer[];
   pickGroup: PowerRankingPick[];
 }
@@ -198,21 +198,26 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
   interface RawScore {
     roster_id: number;
     star: number;
-    starter: number;
+    core: number;
     depth: number;
     picks: number;
     starGroup: PowerRankingPlayer[];
-    starterGroup: PowerRankingPlayer[];
+    coreGroup: PowerRankingPlayer[];
     depthGroup: PowerRankingPlayer[];
     pickGroup: PowerRankingPick[];
   }
 
   const raw: RawScore[] = rosterIds.map((rid) => {
     const all = (playersByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
-    const starters = all.filter((p) => p.slot === "starter");
-    const depthPlayers = all.filter((p) => p.slot !== "starter");
     const picks = (picksByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
     const starGroup = all.slice(0, 4);
+    const starIds = new Set(starGroup.map((p) => p.player_id));
+    // Core = the starting lineup MINUS whoever already counted toward Star
+    // Power -- otherwise a team's studs get credited twice (once for being
+    // elite, again for anchoring the lineup) and Core stops meaning
+    // anything distinct from Star Power.
+    const coreGroup = all.filter((p) => p.slot === "starter" && !starIds.has(p.player_id));
+    const depthPlayers = all.filter((p) => p.slot !== "starter");
 
     return {
       roster_id: rid,
@@ -223,10 +228,11 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
         starGroup.map((p) => p.value),
         0.6
       ),
-      // Starters: mild decay -- every starting slot matters, but the
-      // roster's best player still counts for more than its worst starter.
-      starter: decayWeightedAvg(
-        starters.map((p) => p.value),
+      // Core: mild decay over the rest of the starting lineup -- every
+      // starting slot matters, but the best of the non-star starters still
+      // counts for more than the worst.
+      core: decayWeightedAvg(
+        coreGroup.map((p) => p.value),
         0.92
       ),
       // Depth: steeper decay -- a great QB3 stash matters a lot more than
@@ -240,7 +246,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
         0.85
       ),
       starGroup,
-      starterGroup: starters,
+      coreGroup,
       depthGroup: depthPlayers,
       pickGroup: picks,
     };
@@ -251,24 +257,24 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     return { min: Math.min(...vals), max: Math.max(...vals) };
   };
   const starRange = range((r) => r.star);
-  const starterRange = range((r) => r.starter);
+  const coreRange = range((r) => r.core);
   const depthRange = range((r) => r.depth);
   const picksRange = range((r) => r.picks);
 
   // Star Power carries the most weight by design (rewards elite talent),
-  // Starters next (a real starting lineup), then Depth and Picks -- close to
-  // each other, Picks just a shade lighter since it's unrealized value.
-  const WEIGHTS = { star: 0.45, starter: 0.28, depth: 0.15, picks: 0.12 };
+  // Core next (the rest of a real starting lineup), then Depth and Picks --
+  // close to each other, Picks just a shade lighter since it's unrealized
+  // value.
+  const WEIGHTS = { star: 0.45, core: 0.28, depth: 0.15, picks: 0.12 };
 
   const teamByRoster = new Map(teams.map((t) => [t.roster_id, t]));
 
   const rankings: PowerRanking[] = raw.map((r) => {
     const starN = normalize(r.star, starRange.min, starRange.max);
-    const starterN = normalize(r.starter, starterRange.min, starterRange.max);
+    const coreN = normalize(r.core, coreRange.min, coreRange.max);
     const depthN = normalize(r.depth, depthRange.min, depthRange.max);
     const picksN = normalize(r.picks, picksRange.min, picksRange.max);
-    const overall =
-      WEIGHTS.star * starN + WEIGHTS.starter * starterN + WEIGHTS.depth * depthN + WEIGHTS.picks * picksN;
+    const overall = WEIGHTS.star * starN + WEIGHTS.core * coreN + WEIGHTS.depth * depthN + WEIGHTS.picks * picksN;
 
     const spread = starN - depthN;
     const profile: RosterProfile = spread > 15 ? "Top Heavy" : spread < -15 ? "Deep" : "Balanced";
@@ -283,12 +289,12 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
       avatar: team?.manager?.avatar ?? null,
       overall: round1(overall),
       starScore: round1(starN),
-      starterScore: round1(starterN),
+      coreScore: round1(coreN),
       depthScore: round1(depthN),
       picksScore: round1(picksN),
       profile,
       starGroup: r.starGroup,
-      starterGroup: r.starterGroup,
+      coreGroup: r.coreGroup,
       depthGroup: r.depthGroup,
       pickGroup: r.pickGroup,
     };
