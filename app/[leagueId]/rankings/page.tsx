@@ -29,9 +29,9 @@ export default async function RankingsPage({ params }: { params: Promise<{ leagu
           <PowerRankingsTable rankings={rankings} />
 
           <p className="text-xs text-muted-foreground">
-            Star Power = top 3-4 players by dynasty market value, heavily weighted (~45%). Core = the rest of the
+            Star Power = top 3-4 players by dynasty market value, heavily weighted (~40%). Core = the rest of the
             starting lineup, excluding whoever already counted toward Star Power (~28%). Depth = the rest of the
-            bench and taxi squad, with diminishing weight further down the roster (~15%). Picks = currently owned
+            bench and taxi squad, with diminishing weight further down the roster (~20%). Picks = currently owned
             future draft capital, valued the same way
             (~12%). Every column is scored relative to the rest of the league, so a 94.7 means elite for this
             league specifically, not an absolute number. Values come from FantasyCalc&apos;s dynasty market.

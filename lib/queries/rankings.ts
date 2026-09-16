@@ -312,7 +312,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
   // Core next (the rest of a real starting lineup), then Depth and Picks --
   // close to each other, Picks just a shade lighter since it's unrealized
   // value.
-  const WEIGHTS = { star: 0.45, core: 0.28, depth: 0.15, picks: 0.12 };
+  const WEIGHTS = { star: 0.4, core: 0.28, depth: 0.2, picks: 0.12 };
 
   const teamByRoster = new Map(teams.map((t) => [t.roster_id, t]));
 
