@@ -212,12 +212,11 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     const picks = (picksByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
     const starGroup = all.slice(0, 4);
     const starIds = new Set(starGroup.map((p) => p.player_id));
-    // Core = the starting lineup MINUS whoever already counted toward Star
-    // Power -- otherwise a team's studs get credited twice (once for being
-    // elite, again for anchoring the lineup) and Core stops meaning
-    // anything distinct from Star Power.
+    // Every tier is mutually exclusive -- a player in Star Power can't also
+    // show up in Core or Depth, otherwise the same value gets credited to a
+    // team more than once under a different label.
     const coreGroup = all.filter((p) => p.slot === "starter" && !starIds.has(p.player_id));
-    const depthPlayers = all.filter((p) => p.slot !== "starter");
+    const depthPlayers = all.filter((p) => p.slot !== "starter" && !starIds.has(p.player_id));
 
     return {
       roster_id: rid,
