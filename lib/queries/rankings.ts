@@ -10,6 +10,12 @@ export interface PowerRankingPlayer {
   value: number;
 }
 
+export interface PowerRankingPick {
+  season: string;
+  round: number;
+  value: number;
+}
+
 export interface PowerRanking {
   rank: number;
   roster_id: number;
@@ -23,7 +29,12 @@ export interface PowerRanking {
   depthScore: number;
   picksScore: number;
   profile: RosterProfile;
-  topPlayers: PowerRankingPlayer[];
+  /** Every group sorted desc by value -- the full "why" behind each tier's
+   * score, for the expandable breakdown in the UI. */
+  starGroup: PowerRankingPlayer[];
+  starterGroup: PowerRankingPlayer[];
+  depthGroup: PowerRankingPlayer[];
+  pickGroup: PowerRankingPick[];
 }
 
 interface FcRow {
@@ -155,14 +166,14 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
 
   const rosterIds = teams.map((t) => t.roster_id);
 
-  const picksByRoster = new Map<number, number[]>();
+  const picksByRoster = new Map<number, PowerRankingPick[]>();
   for (const rid of rosterIds) picksByRoster.set(rid, []);
   for (const season of futureSeasons) {
     for (let round = 1; round <= rounds; round++) {
       const val = pickValue(season, round);
       for (const originalRoster of rosterIds) {
         const owner = pickOwnerOverride.get(`${season}:${round}:${originalRoster}`) ?? originalRoster;
-        picksByRoster.get(owner)?.push(val);
+        picksByRoster.get(owner)?.push({ season: String(season), round, value: val });
       }
     }
   }
@@ -190,14 +201,18 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
     starter: number;
     depth: number;
     picks: number;
-    topPlayers: PowerRankingPlayer[];
+    starGroup: PowerRankingPlayer[];
+    starterGroup: PowerRankingPlayer[];
+    depthGroup: PowerRankingPlayer[];
+    pickGroup: PowerRankingPick[];
   }
 
   const raw: RawScore[] = rosterIds.map((rid) => {
     const all = (playersByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
     const starters = all.filter((p) => p.slot === "starter");
     const depthPlayers = all.filter((p) => p.slot !== "starter");
-    const picks = (picksByRoster.get(rid) ?? []).slice().sort((a, b) => b - a);
+    const picks = (picksByRoster.get(rid) ?? []).slice().sort((a, b) => b.value - a.value);
+    const starGroup = all.slice(0, 4);
 
     return {
       roster_id: rid,
@@ -205,7 +220,7 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
       // should read as "how good are this team's best players," not get
       // diluted by the rest of the roster.
       star: decayWeightedAvg(
-        all.slice(0, 4).map((p) => p.value),
+        starGroup.map((p) => p.value),
         0.6
       ),
       // Starters: mild decay -- every starting slot matters, but the
@@ -220,8 +235,14 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
         depthPlayers.map((p) => p.value),
         0.78
       ),
-      picks: decayWeightedAvg(picks, 0.85),
-      topPlayers: all.slice(0, 4),
+      picks: decayWeightedAvg(
+        picks.map((p) => p.value),
+        0.85
+      ),
+      starGroup,
+      starterGroup: starters,
+      depthGroup: depthPlayers,
+      pickGroup: picks,
     };
   });
 
@@ -266,7 +287,10 @@ export async function getPowerRankings(leagueGroupId: string): Promise<PowerRank
       depthScore: round1(depthN),
       picksScore: round1(picksN),
       profile,
-      topPlayers: r.topPlayers,
+      starGroup: r.starGroup,
+      starterGroup: r.starterGroup,
+      depthGroup: r.depthGroup,
+      pickGroup: r.pickGroup,
     };
   });
 
