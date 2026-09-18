@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     default: "Dynasty Archive",
     template: "%s · Dynasty Archive",
   },
-  description: "Your league. Your history. Your analytics.",
+  description: "Every season, record, and trade in your Sleeper league, computed from real league data.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

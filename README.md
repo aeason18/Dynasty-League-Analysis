@@ -1,7 +1,5 @@
 # Fantasy League Archive
 
-**Your league. Your history. Your analytics.**
-
 A historical analytics platform for a dynasty fantasy football league on Sleeper, built on real ingested Sleeper data — no mock data anywhere.
 
 ## Stack

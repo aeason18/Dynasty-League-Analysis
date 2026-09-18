@@ -24,7 +24,7 @@ export default async function OnboardingPage() {
           Dynasty<span className="text-primary">://</span>Archive
         </h1>
         <p className="max-w-md text-sm text-muted-foreground sm:text-base">
-          Your league. Your history. Your analytics. Enter your Sleeper league ID to pull up every season, record,
+          Enter your Sleeper league ID to pull up every season, record,
           and trade — computed from real Sleeper data.
         </p>
       </div>
