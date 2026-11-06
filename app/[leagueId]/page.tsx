@@ -6,8 +6,9 @@ import { CornerFrame } from "@/components/corner-frame";
 import { SeasonSelect } from "@/components/season-select";
 import { ScoringTrendChart } from "@/components/charts/scoring-trend-chart";
 import { EmptyState } from "@/components/empty-state";
-import { CrystalHero } from "@/components/three/crystal-hero";
-import { FragmentSpray } from "@/components/three/fragment-spray";
+import { HeroField } from "@/components/motion/hero-field";
+import { PlayRule } from "@/components/motion/play-rule";
+import { CountUp } from "@/components/motion/count-up";
 import { fmtNumber, fmtPoints } from "@/lib/format";
 import { TrendingUp, Swords } from "lucide-react";
 import Link from "next/link";
@@ -62,7 +63,7 @@ export default async function DashboardPage({
         {/* HERO */}
         <div className="relative px-6 pb-[70px] pt-16 sm:px-8">
           <div className="pointer-events-none absolute -right-8 top-0 -z-10 h-[300px] w-[300px] sm:-right-16 sm:h-[650px] sm:w-[650px] md:h-[750px] md:w-[750px] lg:h-[1000px] lg:w-[1000px]">
-            <CrystalHero />
+            <HeroField />
           </div>
 
           <div className="relative z-10">
@@ -93,22 +94,22 @@ export default async function DashboardPage({
             <CornerFrame />
             <div className="grid grid-cols-2 sm:grid-cols-4">
               <div className="border-b border-r border-foreground/10 p-7 sm:border-b-0">
-                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold">{pad2(overview.seasons)}</div>
+                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold"><CountUp value={overview.seasons} pad={2} /></div>
                 <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-foreground">SEASONS</div>
               </div>
               <div className="border-b border-foreground/10 p-7 sm:border-b-0 sm:border-r">
-                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold">{pad2(overview.managers)}</div>
+                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold"><CountUp value={overview.managers} pad={2} /></div>
                 <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-foreground">MANAGERS</div>
               </div>
               <div className="border-r border-foreground/10 p-7">
-                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold">{fmtNumber(overview.totalGames)}</div>
+                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-semibold"><CountUp value={overview.totalGames} /></div>
                 <div className="mt-2 flex items-center gap-1.5 font-mono text-[11px] tracking-[0.1em] text-foreground">
                   <span className="h-1 w-1 shrink-0 rounded-full bg-pop" aria-hidden />
                   GAMES PLAYED
                 </div>
               </div>
               <div className="bg-primary p-7 text-primary-foreground">
-                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-bold">{fmtPoints(overview.avgPointsPerGame, 1)}</div>
+                <div className="font-mono text-[clamp(20px,4.2vw,38px)] font-bold"><CountUp value={overview.avgPointsPerGame} decimals={1} /></div>
                 <div className="mt-2 font-mono text-[11px] tracking-[0.1em]">AVG PTS / GAME</div>
               </div>
             </div>
@@ -206,7 +207,7 @@ export default async function DashboardPage({
         {/* STANDINGS */}
         <div className="relative mt-[84px] px-6 pb-[88px] sm:px-8">
           <div className="relative flex h-32 items-end overflow-hidden sm:h-40 lg:h-56">
-            <FragmentSpray />
+            <PlayRule />
             <div className="relative z-10 flex w-full items-baseline justify-between pb-2">
               <h2 className="font-heading text-[34px] font-extrabold uppercase tracking-tight">
                 Standings{" "}
