@@ -6,7 +6,7 @@ import { CornerFrame } from "@/components/corner-frame";
 import { SeasonSelect } from "@/components/season-select";
 import { ScoringTrendChart } from "@/components/charts/scoring-trend-chart";
 import { EmptyState } from "@/components/empty-state";
-import { HeroField } from "@/components/motion/hero-field";
+import { HeroGrid } from "@/components/motion/hero-grid";
 import { PlayRule } from "@/components/motion/play-rule";
 import { CountUp } from "@/components/motion/count-up";
 import { fmtNumber, fmtPoints } from "@/lib/format";
@@ -63,7 +63,7 @@ export default async function DashboardPage({
         {/* HERO */}
         <div className="relative px-6 pb-[70px] pt-16 sm:px-8">
           <div className="pointer-events-none absolute -right-8 top-0 -z-10 h-[300px] w-[300px] sm:-right-16 sm:h-[650px] sm:w-[650px] md:h-[750px] md:w-[750px] lg:h-[1000px] lg:w-[1000px]">
-            <HeroField />
+            <HeroGrid />
           </div>
 
           <div className="relative z-10">
